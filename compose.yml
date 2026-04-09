@@ -1,0 +1,40 @@
+services:
+  # MQTT Broker (Mosquitto)
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  # Translation Layer (Zigbee2MQTT)
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt:latest
+    container_name: zigbee2mqtt
+    restart: unless-stopped
+    volumes:
+      - ./zigbee2mqtt-data:/app/data
+      - /run/udev:/run/udev:ro
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=Europe/Berlin
+    #devices:
+      # Hier den korrekten USB-Port deines Dongles eintragen! MUSS GEÄNDERT WERDEN!!!
+    #  - /dev/ttyUSB0:/dev/ttyUSB0
+    depends_on:
+      - mqtt
+
+  # Webserver (Flask)
+  flask-web:
+    build: ./flask-app
+    container_name: flask_dashboard
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mqtt
