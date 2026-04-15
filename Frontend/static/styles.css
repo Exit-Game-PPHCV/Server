@@ -1,0 +1,178 @@
+:root {
+    --neon-green: #33ff33;
+    --dark-green: #0a1a0a;
+    --alert-red: #ff3333;
+    --panel-gray: #2c3033;
+}
+
+body {
+    background-color: #111;
+    background-image: url('assets/metal-texture.jpg'); /* Platzhalter für Hintergrund */
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: sans-serif;
+}
+
+/* Das Haupt-Panel aus Metall/Plastik */
+.cockpit-panel {
+    background-color: var(--panel-gray);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 20px 50px rgba(0,0,0,0.9);
+    border: 4px solid #444;
+    width: 90%;
+    max-width: 800px;
+}
+
+/* Status Lichter Oben */
+.status-lights {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.light {
+    background-color: #333;
+    color: #111;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,1);
+    border: 2px solid #222;
+    transition: all 0.3s;
+}
+
+.light.active {
+    background-color: var(--alert-red);
+    color: white;
+    box-shadow: 0 0 15px var(--alert-red), inset 0 0 10px rgba(255,255,255,0.5);
+    animation: blink 1s infinite;
+}
+
+.light.solved {
+    background-color: var(--neon-green);
+    color: black;
+    box-shadow: 0 0 15px var(--neon-green);
+    animation: none;
+}
+
+@keyframes blink {
+    50% { opacity: 0.5; }
+}
+
+/* Der grüne Röhrenmonitor */
+.crt-screen {
+    background-color: var(--dark-green);
+    border: 15px solid #1a1a1a;
+    border-radius: 20px 20px 30px 30px;
+    position: relative;
+    overflow: hidden;
+    height: 300px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,1), 0 10px 15px rgba(0,0,0,0.5);
+}
+
+.scanlines {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.screen-content {
+    padding: 20px;
+    color: var(--neon-green);
+    font-family: 'Share Tech Mono', monospace;
+    text-shadow: 0 0 5px var(--neon-green);
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--neon-green);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.message-area {
+    flex-grow: 1;
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+.input-area {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#code-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--neon-green);
+    color: var(--neon-green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 20px;
+    text-shadow: 0 0 5px var(--neon-green);
+    margin-left: 10px;
+    width: 150px;
+    outline: none;
+    text-transform: uppercase;
+}
+
+/* Hardware Knöpfe */
+.hardware-btn {
+    background: #444;
+    color: white;
+    border: 2px solid #222;
+    padding: 8px 15px;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    margin-left: 15px;
+    border-radius: 4px;
+    box-shadow: 2px 2px 0 #111;
+}
+
+.hardware-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+.controls-area {
+    margin-top: 30px;
+    text-align: right;
+}
+
+/* Der dicke Hilfe-Knopf */
+.emergency-btn {
+    background: #ffcc00; /* Gelb für Vorsicht */
+    border: 4px solid #b38f00;
+    border-radius: 8px;
+    padding: 15px 30px;
+    cursor: pointer;
+    box-shadow: 0 8px 0 #806600, 0 15px 20px rgba(0,0,0,0.5);
+    transition: all 0.1s;
+}
+
+.emergency-btn:active {
+    transform: translateY(8px);
+    box-shadow: 0 0 0 #806600, 0 5px 10px rgba(0,0,0,0.5);
+}
+
+.btn-label {
+    font-weight: bold;
+    color: #111;
+    font-size: 18px;
+    letter-spacing: 2px;
+}
