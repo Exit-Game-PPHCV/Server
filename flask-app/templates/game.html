@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/game.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div id="game-board">
+        <svg id="svg-canvas"></svg>
+
+        <div class="node-column" id="left-nodes"></div>
+
+        <div class="node-column" id="right-nodes"></div>
+
+        <div id="win-message">Task Abgeschlossen!</div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% endblock %}
