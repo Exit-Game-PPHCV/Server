@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 import paho.mqtt.client as mqtt
+from paho.mqtt.enums import CallbackAPIVersion
 import json
 import os
 
@@ -8,24 +9,25 @@ app = Flask(__name__)
 latest_sensor_data = {}
 
 # --- MQTT SETUP ---
-def on_connect(client, userdata, flags, rc):
-    print("Mit MQTT-Broker verbunden!")
-    client.subscribe("zigbee2mqtt/+")
+def on_connect(client, userdata, connect_flags, reason_code, properties):
+    if reason_code == 0:
+        print("Mit MQTT-Broker verbunden!")
+        client.subscribe("zigbee2mqtt/+")
+    else:
+        print(f"Verbindungsfehler: {reason_code}")
 
 def on_message(client, userdata, msg):
-    global aktuelle_temperatur
     try:
         payload = json.loads(msg.payload.decode('utf-8'))
-        
+        latest_sensor_data[msg.topic] = payload
         if 'temperature' in payload:
-            aktuelle_temperatur = f"{payload['temperature']} °C"
-            print(f"Neue Temperatur: {aktuelle_temperatur}")
+            print(f"Neue Temperatur auf {msg.topic}: {payload['temperature']} °C")
     except Exception as e:
         print("Fehler beim Auslesen der Daten:", e)
 
 broker_adresse = os.environ.get('MQTT_BROKER', 'mqtt')
 
-client = mqtt.Client()
+client = mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
 client.on_message = on_message
 
@@ -34,6 +36,7 @@ try:
     client.loop_start() 
 except Exception as e:
     print("Konnte keine MQTT-Verbindung aufbauen:", e)
+
 
 @app.route("/")
 def helloWorld():
@@ -50,3 +53,6 @@ def game_complete():
 def get_sensors():
     # Eine API-Route, damit du die Daten auf einer Webseite anzeigen kannst
     return jsonify(latest_sensor_data)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
