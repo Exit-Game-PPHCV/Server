@@ -1,10 +1,63 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <title>Index</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <p>Hello World!</p>
-</body>
-</html>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cockpit.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="cockpit-container">
+    <!-- Sky View -->
+    <div class="sky-bg"></div>
+    <div class="clouds"></div>
+
+    <!-- Cockpit Overlay -->
+    <div class="cockpit-frame">
+        <div class="window-view"></div>
+        
+        <div class="dashboard">
+            <!-- Left Side Sensors -->
+            <div class="panel">
+                <div class="panel-title">Airspeed</div>
+                <div class="display-container">
+                    <span id="speed-value" class="display-value">0</span>
+                    <span class="unit">KNOTS</span>
+                </div>
+                <div class="panel-title" style="margin-top: 20px;">Altitude</div>
+                <div class="display-container">
+                    <span id="alt-value" class="display-value">0</span>
+                    <span class="unit">FT</span>
+                </div>
+            </div>
+
+            <!-- Center Attitude Indicator -->
+            <div class="panel center-panel">
+                <div class="panel-title">Attitude Indicator</div>
+                <div class="attitude-indicator">
+                    <div class="ai-sky"></div>
+                    <div class="ai-ground"></div>
+                    <div class="ai-plane-mark"></div>
+                    <div class="center-dot"></div>
+                </div>
+            </div>
+
+            <!-- Right Side Sensors -->
+            <div class="panel">
+                <div class="panel-title">Cabin Temp</div>
+                <div class="display-container">
+                    <span id="temp-value" class="display-value">--.-</span>
+                    <span class="unit">°C</span>
+                </div>
+                
+                <div class="panel-title" style="margin-top: 20px;">System Status</div>
+                <div class="display-container">
+                    <span class="status-indicator" style="color: #4caf50;">ONLINE</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/cockpit.js') }}"></script>
+{% endblock %}

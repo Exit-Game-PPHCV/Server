@@ -8,6 +8,19 @@ app = Flask(__name__)
 
 latest_sensor_data = {}
 
+nfc = False
+temparatur = False
+cable = False
+neigung = False
+
+progress = 0
+def checkProgress():
+    for check in [nfc, temparatur, cable, neigung]:
+        if check:
+            progress += 25
+
+
+
 # --- MQTT SETUP ---
 def on_connect(client, userdata, connect_flags, reason_code, properties):
     if reason_code == 0:
@@ -47,11 +60,11 @@ def game():
 @app.route('/game-complete', methods=['POST'])
 def game_complete():
     data = request.get_json()
+    cable = True
     print(f"Erfolg: Task {data.get('task')} abgeschlossen.")
     return jsonify({"status": "success", "received": data}), 200
 @app.route('/api/sensors', methods=['GET'])
 def get_sensors():
-    # Eine API-Route, damit du die Daten auf einer Webseite anzeigen kannst
     return jsonify(latest_sensor_data)
 
 if __name__ == '__main__':

@@ -1,0 +1,179 @@
+.cockpit-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Default sky gradient */
+}
+
+/* Sky Background */
+.sky-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #001133 0%, #004488 50%, #88ccff 100%);
+    z-index: 1;
+}
+
+.clouds {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: url('https://www.transparenttextures.com/patterns/clouds.png');
+    opacity: 0.3;
+    animation: moveClouds 60s linear infinite;
+    z-index: 2;
+}
+
+@keyframes moveClouds {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+/* Cockpit Frame */
+.cockpit-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    pointer-events: none;
+    animation: cockpitShake 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes cockpitShake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    20% { transform: translate(-1px, -1px) rotate(0.1deg); }
+    40% { transform: translate(-2px, 0px) rotate(-0.1deg); }
+    60% { transform: translate(2px, 1px) rotate(0deg); }
+    80% { transform: translate(-1px, -1px) rotate(0.1deg); }
+    100% { transform: translate(1px, 1px) rotate(-0.1deg); }
+}
+
+.window-view {
+    flex: 1;
+    border-bottom: 20px solid #1a1a1a;
+    box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+    position: relative;
+}
+
+.dashboard {
+    height: 40%;
+    background: linear-gradient(to bottom, #2c3e50, #000000);
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 20px;
+    border-top: 5px solid #444;
+    pointer-events: auto;
+}
+
+/* Panels */
+.panel {
+    background: var(--panel-bg);
+    border: 2px solid #444;
+    border-radius: 10px;
+    padding: 15px;
+    backdrop-filter: var(--glass-effect);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.05);
+}
+
+.panel-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+.display-value {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 2.5rem;
+    color: var(--accent-color);
+    text-shadow: 0 0 10px var(--accent-color);
+}
+
+.unit {
+    font-size: 1rem;
+    color: #666;
+    margin-left: 5px;
+}
+
+/* Artificial Horizon (Attitude Indicator) */
+.attitude-indicator {
+    position: relative;
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    border: 8px solid #333;
+    overflow: hidden;
+    background: #444;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+.ai-sky {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background: linear-gradient(to bottom, #2980b9, #3498db);
+    transition: transform 0.1s linear;
+}
+
+.ai-ground {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: 50%;
+    left: -50%;
+    background: linear-gradient(to bottom, #795548, #3e2723);
+    border-top: 2px solid white;
+    transition: transform 0.1s linear;
+}
+
+.ai-plane-mark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 4px;
+    background: #ffeb3b;
+    z-index: 5;
+}
+
+.ai-plane-mark::before, .ai-plane-mark::after {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 4px;
+    background: #ffeb3b;
+    top: -10px;
+}
+
+.ai-plane-mark::before { left: 0; transform: rotate(-30deg); }
+.ai-plane-mark::after { right: 0; transform: rotate(30deg); }
+
+.center-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: #ffeb3b;
+    border-radius: 50%;
+    z-index: 6;
+}
