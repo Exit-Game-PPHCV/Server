@@ -3,7 +3,8 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Default sky gradient */
+    background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d);
+    /* Default sky gradient */
 }
 
 /* Sky Background */
@@ -23,15 +24,20 @@
     left: 0;
     width: 200%;
     height: 100%;
-    background: url('https://www.transparenttextures.com/patterns/clouds.png');
+    /* Cloud texture is removed for offline mode compatibility */
     opacity: 0.3;
     animation: moveClouds 60s linear infinite;
     z-index: 2;
 }
 
 @keyframes moveClouds {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
 }
 
 /* Cockpit Frame */
@@ -49,28 +55,47 @@
 }
 
 @keyframes cockpitShake {
-    0% { transform: translate(1px, 1px) rotate(0deg); }
-    20% { transform: translate(-1px, -1px) rotate(0.1deg); }
-    40% { transform: translate(-2px, 0px) rotate(-0.1deg); }
-    60% { transform: translate(2px, 1px) rotate(0deg); }
-    80% { transform: translate(-1px, -1px) rotate(0.1deg); }
-    100% { transform: translate(1px, 1px) rotate(-0.1deg); }
+    0% {
+        transform: translate(1px, 1px) rotate(0deg);
+    }
+
+    20% {
+        transform: translate(-1px, -1px) rotate(0.1deg);
+    }
+
+    40% {
+        transform: translate(-2px, 0px) rotate(-0.1deg);
+    }
+
+    60% {
+        transform: translate(2px, 1px) rotate(0deg);
+    }
+
+    80% {
+        transform: translate(-1px, -1px) rotate(0.1deg);
+    }
+
+    100% {
+        transform: translate(1px, 1px) rotate(-0.1deg);
+    }
 }
 
 .window-view {
     flex: 1;
     border-bottom: 20px solid #1a1a1a;
-    box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.5);
     position: relative;
 }
 
 .dashboard {
-    height: 40%;
+    height: auto;
+    min-height: 40%;
+    flex-shrink: 0;
     background: linear-gradient(to bottom, #2c3e50, #000000);
     padding: 20px;
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
-    gap: 20px;
+    gap: 15px;
     border-top: 5px solid #444;
     pointer-events: auto;
 }
@@ -86,7 +111,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.05);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.05);
 }
 
 .panel-title {
@@ -119,28 +144,36 @@
     border: 8px solid #333;
     overflow: hidden;
     background: #444;
-    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+.ai-inner {
+    position: absolute;
+    width: 400%;
+    height: 400%;
+    top: -150%;
+    left: -150%;
+    transition: transform 0.1s linear;
 }
 
 .ai-sky {
     position: absolute;
-    width: 200%;
-    height: 200%;
-    top: -50%;
-    left: -50%;
-    background: linear-gradient(to bottom, #2980b9, #3498db);
-    transition: transform 0.1s linear;
+    width: 100%;
+    height: 50%;
+    top: 0;
+    left: 0;
+    background: linear-gradient(to bottom, #2980b9, #5dade2);
 }
 
 .ai-ground {
     position: absolute;
-    width: 200%;
-    height: 200%;
+    width: 100%;
+    height: 50%;
     top: 50%;
-    left: -50%;
+    left: 0;
     background: linear-gradient(to bottom, #795548, #3e2723);
-    border-top: 2px solid white;
-    transition: transform 0.1s linear;
+    border-top: 3px solid #fff;
+    box-shadow: inset 0 15px 30px rgba(0,0,0,0.5);
 }
 
 .ai-plane-mark {
@@ -154,7 +187,8 @@
     z-index: 5;
 }
 
-.ai-plane-mark::before, .ai-plane-mark::after {
+.ai-plane-mark::before,
+.ai-plane-mark::after {
     content: '';
     position: absolute;
     width: 30px;
@@ -163,8 +197,15 @@
     top: -10px;
 }
 
-.ai-plane-mark::before { left: 0; transform: rotate(-30deg); }
-.ai-plane-mark::after { right: 0; transform: rotate(30deg); }
+.ai-plane-mark::before {
+    left: 0;
+    transform: rotate(-30deg);
+}
+
+.ai-plane-mark::after {
+    right: 0;
+    transform: rotate(30deg);
+}
 
 .center-dot {
     position: absolute;
@@ -176,4 +217,112 @@
     background: #ffeb3b;
     border-radius: 50%;
     z-index: 6;
+}
+
+/* --- NEW: Pinpad Styles --- */
+.pinpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.pin-btn {
+    background: linear-gradient(145deg, #444, #222);
+    border: 2px solid #555;
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 10px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    transition: all 0.1s;
+}
+
+.pin-btn:active {
+    transform: scale(0.95);
+    background: #555;
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.8);
+    color: var(--accent-color);
+}
+
+/* --- NEW: Potentiometer Styles --- */
+.potentiometer-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 15px;
+    border-radius: 10px;
+    background: #333;
+    outline: none;
+    opacity: 0.8;
+    transition: opacity .2s;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 1);
+    border: 1px solid #555;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 40px;
+    border-radius: 5px;
+    background: linear-gradient(to bottom, #ddd, #888);
+    cursor: pointer;
+    border: 2px solid #222;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.slider::-moz-range-thumb {
+    width: 25px;
+    height: 40px;
+    border-radius: 5px;
+    background: linear-gradient(to bottom, #ddd, #888);
+    cursor: pointer;
+    border: 2px solid #222;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.poti-value-display {
+    margin-top: 15px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.5rem;
+    color: #00ffcc;
+    text-shadow: 0 0 5px #00ffcc;
+}
+
+/* --- NEW: Radio Styles --- */
+.radio-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #222;
+    padding: 5px 15px 10px;
+    border-radius: 5px;
+    border: 2px solid #555;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    width: 80%;
+    margin-top: 15px;
+}
+
+.radio-display {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.8rem;
+    color: #ff5722;
+    text-shadow: 0 0 8px #ff5722;
+    background: #000;
+    padding: 5px 10px;
+    border-radius: 3px;
+    border: 1px solid #444;
+    letter-spacing: 2px;
 }
