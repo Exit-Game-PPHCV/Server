@@ -26,7 +26,7 @@ services:
   # Reverse Proxy (Traefik)
   # ==========================================
   traefik:
-    image: traefik:v2.10
+    image: traefik:latest
     container_name: traefik
     command:
       - "--api.dashboard=true"
@@ -51,7 +51,7 @@ services:
   # MQTT Broker (Mosquitto)
   # ==========================================
   mqtt:
-    image: eclipse-mosquitto:2
+    image: eclipse-mosquitto:latest
     container_name: mosquitto
     restart: unless-stopped
     ports:
