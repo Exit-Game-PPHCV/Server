@@ -22,14 +22,3 @@ mosquitto/data/
 mosquitto/log/
 zigbee2mqtt-data/
 
-# Pi-hole runtime artifacts and caches
-pihole/etc-pihole/gravity.db
-pihole/etc-pihole/gravity_old.db
-pihole/etc-pihole/pihole-FTL.db
-pihole/etc-pihole/pihole-FTL.db-*
-pihole/etc-pihole/dhcp.leases
-pihole/etc-pihole/listsCache/
-pihole/etc-pihole/gravity_backups/
-pihole/etc-pihole/migration_backup/
-pihole/etc-pihole/hosts/
-pihole/etc-pihole/tls.*
