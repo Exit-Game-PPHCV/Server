@@ -82,13 +82,6 @@ services:
       - "traefik.http.routers.z2m.tls=true"
       - "traefik.http.services.z2m.loadbalancer.server.port=8080"
 
-  # ==========================================
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.z2m.rule=Host(`z2m.exit.game`)"
-      - "traefik.http.routers.z2m.entrypoints=websecure"
-      - "traefik.http.routers.z2m.tls=true"
-      - "traefik.http.services.z2m.loadbalancer.server.port=8080"
 
   # ==========================================
   # Webserver (Flask)
@@ -99,12 +92,6 @@ services:
     restart: unless-stopped
     depends_on:
       - mqtt
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.flask.rule=Host(`flask.exit.game`)"
-      - "traefik.http.routers.flask.entrypoints=websecure"
-      - "traefik.http.routers.flask.tls=true"
-      - "traefik.http.services.flask.loadbalancer.server.port=5000"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.flask.rule=Host(`flask.exit.game`)"
