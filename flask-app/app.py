@@ -15,9 +15,11 @@ nfc = False
 temparatur = False
 cable = False
 neigung = False
-
+autopilot = False
+frequenz = False
+ 
 last_send_time = 0
-MQTT_TOPIC = "zigbee2mqtt/cockpit"
+MQTT_TOPIC = "zigbee2mqtt-data"
 
 progress = 0
 def checkProgress():
@@ -40,11 +42,21 @@ def on_message(client, userdata, msg):
         payload = json.loads(msg.payload.decode('utf-8'))
         latest_sensor_data[msg.topic] = payload
         
-        # Forward to Cockpit via WebSocket
         socketio.emit('mqtt_update', {'topic': msg.topic, 'data': payload})
         
         if 'temperature' in payload:
             print(f"Neue Temperatur auf {msg.topic}: {payload['temperature']} °C")
+        
+        # Check for autopilot status
+        if 'autopilot' in payload:
+            global autopilot
+            autopilot = bool(payload['autopilot'])
+            socketio.emit('autopilot_update', {'status': autopilot})
+            print(f"Autopilot Status: {'ON' if autopilot else 'OFF'}")
+        if 'frequenz' in payload:
+            frequenz = payload['frequenz']
+            socketio.emit('frequenz_update', {'frequenz': frequenz})
+            print(f"Frequenz: {frequenz}")
     except Exception as e:
         print("Fehler beim Auslesen der Daten:", e)
 
@@ -70,7 +82,10 @@ def game():
 @app.route('/game-complete', methods=['POST'])
 def game_complete():
     data = request.get_json()
+    global cable
     cable = True
+    # Notify the Cockpit UI via WebSocket that the task is done
+    socketio.emit('task_update', {'task': 'wires', 'status': 'complete'})
     print(f"Erfolg: Task {data.get('task')} abgeschlossen.")
     return jsonify({"status": "success", "received": data}), 200
 @app.route('/api/sensors', methods=['GET'])
@@ -80,6 +95,17 @@ def get_sensors():
 @app.route("/gyro")
 def gyro():
     return render_template("gyro.html")
+@socketio.on('connect')
+def handle_connect():
+    initial_state = {
+        'autopilot': autopilot,
+        'sensors': latest_sensor_data,
+        'cable_task_complete': cable,
+        'frequenz': frequenz
+    }
+    socketio.emit('initial_state', initial_state)
+    print("Cockpit verbunden - Initialer Status synchronisiert.")
+
 @socketio.on('sensor_data')
 def handle_sensor_data(data):
     global last_send_time
@@ -92,7 +118,6 @@ def handle_sensor_data(data):
     pitch = max(-45, min(45, pitch))
     roll = max(-45, min(45, roll))
     
-    # Forward to Cockpit immediately for smooth animation
     socketio.emit('cockpit_gyro', {'pitch': pitch, 'roll': roll})
 
     servo_pitch = int(45 + ((pitch + 45) * (135 - 45) / 90))
@@ -107,24 +132,6 @@ def handle_sensor_data(data):
         print(f"MQTT Publish Fehler: {e}")
     
     last_send_time = current_time
-
-@socketio.on('sim_pinpad')
-def handle_sim_pinpad(data):
-    key = data.get('key')
-    print(f"Simuliertes Pinpad: {key}")
-    try:
-        client.publish("zigbee2mqtt/cockpit/sim_pinpad", json.dumps({"key": key}))
-    except Exception as e:
-        print(f"MQTT Publish Fehler (Pinpad): {e}")
-
-@socketio.on('sim_potentiometer')
-def handle_sim_potentiometer(data):
-    value = data.get('value')
-    print(f"Simuliertes Potentiometer: {value}")
-    try:
-        client.publish("zigbee2mqtt/cockpit/sim_potentiometer", json.dumps({"value": value}))
-    except Exception as e:
-        print(f"MQTT Publish Fehler (Potentiometer): {e}")
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
