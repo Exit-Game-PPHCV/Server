@@ -20,12 +20,12 @@ services:
       - ./zigbee2mqtt-data:/app/data
       - /run/udev:/run/udev:ro
     ports:
-      - "8080:8080"
+      - "8080:8787"
     environment:
       - TZ=Europe/Berlin
-    #devices:
+    devices:
       # Hier den korrekten USB-Port deines Dongles eintragen! MUSS GEÄNDERT WERDEN!!!
-    #  - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/ttyUSB0:/dev/ttyUSB0
     depends_on:
       - mqtt
     labels:
