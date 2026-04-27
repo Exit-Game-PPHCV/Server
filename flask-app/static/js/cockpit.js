@@ -3,14 +3,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const tempValue = document.getElementById('temp-value');
     const altValue = document.getElementById('alt-value');
     const speedValue = document.getElementById('speed-value');
-    
+
     // UI Elements
     const autopilotIndicator = document.getElementById('autopilot-indicator');
-    const pinButtons = document.querySelectorAll('.pin-btn');
+    const radioDisplay = document.querySelector('.radio-display');
 
     let currentRoll = 0;
     let currentPitch = 0;
-
+    let richtigefrequenz = "121.950";
+    let standardfrequenz = "121.500";
     let currentAlt = 32000;
     let currentSpeed = 450;
     let lastTime = Date.now();
@@ -36,16 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (payload && payload.temperature !== undefined) {
             tempValue.textContent = payload.temperature.toFixed(1);
         }
-        // If a pinpad key is received via MQTT, light up the corresponding button
-        if (payload && payload.key !== undefined) {
-            const keyStr = payload.key.toString();
-            pinButtons.forEach(btn => {
-                if (btn.textContent === keyStr) {
-                    btn.style.backgroundColor = '#4caf50';
-                    setTimeout(() => btn.style.backgroundColor = '', 300);
-                }
-            });
-        }
     });
 
     // Helper to update autopilot UI
@@ -59,10 +50,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Helper to update radio UI
+    function setRadioUI(isCorrect) {
+        if (radioDisplay) {
+            radioDisplay.textContent = isCorrect ? richtigefrequenz : standardfrequenz;
+            if (isCorrect) {
+                radioDisplay.style.color = '#00ffcc';
+                radioDisplay.style.textShadow = '0 0 10px #00ffcc';
+            } else {
+                radioDisplay.style.color = '';
+                radioDisplay.style.textShadow = '';
+            }
+        }
+    }
+
     // Listen for Initial State on Connect
     socket.on('initial_state', (data) => {
         // Sync Autopilot
         setAutopilotUI(data.autopilot);
+
+        // Sync Radio Frequency
+        setRadioUI(data.frequenz);
 
         // Sync Game Task Status
         if (data.cable_task_complete) {
@@ -87,6 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Listen for Autopilot Updates
     socket.on('autopilot_update', (data) => {
         setAutopilotUI(data.status);
+    });
+
+    // Listen for Frequency Updates
+    socket.on('frequenz_update', (data) => {
+        setRadioUI(data.frequenz);
     });
 
     // Listen for Task Completion

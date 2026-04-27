@@ -14,12 +14,12 @@ latest_sensor_data = {}
 nfc = False
 temparatur = False
 cable = False
-neigung = False
 autopilot = False
 frequenz = False
+cable_count = 0
  
 last_send_time = 0
-MQTT_TOPIC = "zigbee2mqtt-data"
+MQTT_TOPIC = "zigbee2mqtt/servo"
 
 progress = 0
 def checkProgress():
@@ -78,16 +78,23 @@ def helloWorld():
     return render_template("index.html")
 @app.route("/game")
 def game():
-    return render_template("game.html")
+    return render_template("game.html", is_done=cable)
 @app.route('/game-complete', methods=['POST'])
 def game_complete():
+    global cable, cable_count
     data = request.get_json()
-    global cable
-    cable = True
-    # Notify the Cockpit UI via WebSocket that the task is done
-    socketio.emit('task_update', {'task': 'wires', 'status': 'complete'})
-    print(f"Erfolg: Task {data.get('task')} abgeschlossen.")
-    return jsonify({"status": "success", "received": data}), 200
+    
+    cable_count += 1
+    
+    if cable_count >= 3:
+        cable = True
+        # Notify the Cockpit UI via WebSocket that the task is done
+        socketio.emit('task_update', {'task': 'wires', 'status': 'complete'})
+        print(f"Erfolg: Task {data.get('task')} nach 3 Durchläufen abgeschlossen.")
+        return jsonify({"status": "success", "count": cable_count}), 200
+    else:
+        print(f"Fortschritt: Task Durchlauf {cable_count}/3.")
+        return jsonify({"status": "progress", "count": cable_count}), 200
 @app.route('/api/sensors', methods=['GET'])
 def get_sensors():
     return jsonify(latest_sensor_data)
@@ -97,6 +104,11 @@ def gyro():
     return render_template("gyro.html")
 @socketio.on('connect')
 def handle_connect():
+    global cable, cable_count
+    # Reset progress only if the task was not yet fully completed
+    if not cable:
+        cable_count = 0
+    
     initial_state = {
         'autopilot': autopilot,
         'sensors': latest_sensor_data,

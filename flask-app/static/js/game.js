@@ -84,8 +84,6 @@ function startLine(e, color, node) {
 }
 
 function finishGame() {
-    document.getElementById('win-message').style.display = 'block';
-    
     // Server benachrichtigen
     fetch('/game-complete', {
         method: 'POST',
@@ -93,8 +91,27 @@ function finishGame() {
         body: JSON.stringify({ task: 'wires', status: 'complete' })
     })
     .then(res => res.json())
-    .then(data => console.log("Server bestätigt:", data));
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('win-message').style.display = 'block';
+            console.log("Gesamt-Task erfolgreich abgeschlossen!");
+        } else if (data.status === 'progress') {
+            console.log(`Durchlauf ${data.count}/3 erfolgreich. Starte nächsten Durchlauf...`);
+            // Board zurücksetzen für nächste Runde
+            setTimeout(() => {
+                svgCanvas.innerHTML = '';
+                document.getElementById('left-nodes').innerHTML = '';
+                document.getElementById('right-nodes').innerHTML = '';
+                connections = 0;
+                initGame();
+            }, 500);
+        }
+    });
 }
 document.addEventListener('DOMContentLoaded', () => {
-    initGame();
+    if (gameBoard.dataset.done === 'true') {
+        document.getElementById('win-message').style.display = 'block';
+    } else {
+        initGame();
+    }
 })
