@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-    <div id="game-board">
+    <div id="game-board" data-done="{{ 'true' if is_done else 'false' }}">
         <svg id="svg-canvas"></svg>
 
         <div class="node-column" id="left-nodes"></div>
