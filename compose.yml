@@ -93,7 +93,7 @@ services:
     depends_on:
       - mqtt
     ports:
-      -"5000:5000"
+      - "5000:5000"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.flask.rule=Host(`flask.exit.game`)"
