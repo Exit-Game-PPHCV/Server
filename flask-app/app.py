@@ -1,10 +1,13 @@
 from flask import Flask, render_template, jsonify, request
+from flask_socketio import SocketIO
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 import json
+import time
 import os
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 latest_sensor_data = {}
 
@@ -12,6 +15,9 @@ nfc = False
 temparatur = False
 cable = False
 neigung = False
+
+last_send_time = 0
+MQTT_TOPIC = "zigbee2mqtt/cockpit"
 
 progress = 0
 def checkProgress():
@@ -33,6 +39,10 @@ def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode('utf-8'))
         latest_sensor_data[msg.topic] = payload
+        
+        # Forward to Cockpit via WebSocket
+        socketio.emit('mqtt_update', {'topic': msg.topic, 'data': payload})
+        
         if 'temperature' in payload:
             print(f"Neue Temperatur auf {msg.topic}: {payload['temperature']} °C")
     except Exception as e:
@@ -67,5 +77,54 @@ def game_complete():
 def get_sensors():
     return jsonify(latest_sensor_data)
 
+@app.route("/gyro")
+def gyro():
+    return render_template("gyro.html")
+@socketio.on('sensor_data')
+def handle_sensor_data(data):
+    global last_send_time
+    current_time = time.time()
+    if current_time - last_send_time < 0.05:
+        return
+    pitch = data.get('pitch', 0)
+    roll = data.get('roll', 0)
+
+    pitch = max(-45, min(45, pitch))
+    roll = max(-45, min(45, roll))
+    
+    # Forward to Cockpit immediately for smooth animation
+    socketio.emit('cockpit_gyro', {'pitch': pitch, 'roll': roll})
+
+    servo_pitch = int(45 + ((pitch + 45) * (135 - 45) / 90))
+    servo_roll = int(45 + ((roll + 45) * (135 - 45) / 90))
+
+    payload = json.dumps({"pitch_servo": servo_pitch, "roll_servo": servo_roll})
+    
+    try:
+        client.publish(MQTT_TOPIC, payload)
+        print(f"Gesendet an Zigbee: {payload}")
+    except Exception as e:
+        print(f"MQTT Publish Fehler: {e}")
+    
+    last_send_time = current_time
+
+@socketio.on('sim_pinpad')
+def handle_sim_pinpad(data):
+    key = data.get('key')
+    print(f"Simuliertes Pinpad: {key}")
+    try:
+        client.publish("zigbee2mqtt/cockpit/sim_pinpad", json.dumps({"key": key}))
+    except Exception as e:
+        print(f"MQTT Publish Fehler (Pinpad): {e}")
+
+@socketio.on('sim_potentiometer')
+def handle_sim_potentiometer(data):
+    value = data.get('value')
+    print(f"Simuliertes Potentiometer: {value}")
+    try:
+        client.publish("zigbee2mqtt/cockpit/sim_potentiometer", json.dumps({"value": value}))
+    except Exception as e:
+        print(f"MQTT Publish Fehler (Potentiometer): {e}")
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
