@@ -173,7 +173,7 @@
     left: 0;
     background: linear-gradient(to bottom, #795548, #3e2723);
     border-top: 3px solid #fff;
-    box-shadow: inset 0 15px 30px rgba(0,0,0,0.5);
+    box-shadow: inset 0 15px 30px rgba(0, 0, 0, 0.5);
 }
 
 .ai-plane-mark {
@@ -219,86 +219,54 @@
     z-index: 6;
 }
 
-/* --- NEW: Pinpad Styles --- */
-.pinpad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 10px;
+/* --- Integrated Game Styles --- */
+.game-container {
     width: 100%;
-}
-
-.pin-btn {
-    background: linear-gradient(145deg, #444, #222);
+    height: 300px;
+    background: #000;
     border: 2px solid #555;
-    color: #fff;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 1.5rem;
-    font-weight: bold;
-    padding: 10px 0;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-    transition: all 0.1s;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
 }
 
-.pin-btn:active {
-    transform: scale(0.95);
-    background: #555;
-    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.8);
-    color: var(--accent-color);
+.game-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
 }
 
-/* --- NEW: Potentiometer Styles --- */
-.potentiometer-container {
+
+
+/* --- NEW: Autopilot Styles --- */
+.autopilot-container {
     width: 100%;
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: center;
     margin-top: 10px;
 }
 
-.slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 15px;
-    border-radius: 10px;
-    background: #333;
-    outline: none;
-    opacity: 0.8;
-    transition: opacity .2s;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 1);
-    border: 1px solid #555;
-}
-
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 25px;
-    height: 40px;
-    border-radius: 5px;
-    background: linear-gradient(to bottom, #ddd, #888);
-    cursor: pointer;
-    border: 2px solid #222;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-}
-
-.slider::-moz-range-thumb {
-    width: 25px;
-    height: 40px;
-    border-radius: 5px;
-    background: linear-gradient(to bottom, #ddd, #888);
-    cursor: pointer;
-    border: 2px solid #222;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-}
-
-.poti-value-display {
-    margin-top: 15px;
+.status-lamp {
     font-family: 'Courier New', Courier, monospace;
-    font-size: 1.5rem;
-    color: #00ffcc;
-    text-shadow: 0 0 5px #00ffcc;
+    font-size: 1.8rem;
+    font-weight: bold;
+    padding: 10px 30px;
+    border-radius: 5px;
+    background: #333;
+    color: #666;
+    border: 3px solid #444;
+    text-shadow: none;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+
+.status-lamp.active {
+    background: #004400;
+    color: #00ff00;
+    border-color: #00ff00;
+    text-shadow: 0 0 15px #00ff00;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.4), inset 0 0 10px rgba(0,0,0,0.5);
 }
 
 /* --- NEW: Radio Styles --- */
@@ -310,7 +278,7 @@
     padding: 5px 15px 10px;
     border-radius: 5px;
     border: 2px solid #555;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
     width: 80%;
     margin-top: 15px;
 }

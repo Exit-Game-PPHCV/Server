@@ -28,11 +28,10 @@
                     <span class="unit">FT</span>
                 </div>
 
-                <!-- NEW: Potentiometer -->
-                <div class="panel-title" style="margin-top: 20px;">Throttle / Power</div>
-                <div class="potentiometer-container">
-                    <input type="range" id="potentiometer" min="0" max="100" value="50" class="slider">
-                    <div class="poti-value-display"><span id="poti-value">50</span>%</div>
+                <!-- Autopilot Indicator -->
+                <div class="panel-title" style="margin-top: 20px;">Autopilot Status</div>
+                <div class="autopilot-container">
+                    <div id="autopilot-indicator" class="status-lamp">OFF</div>
                 </div>
             </div>
 
@@ -68,21 +67,10 @@
                     <span class="status-indicator" style="color: #4caf50;">ONLINE</span>
                 </div>
 
-                <!-- NEW: Pinpad -->
-                <div class="panel-title" style="margin-top: 20px;">Auth Code</div>
-                <div class="pinpad">
-                    <button class="pin-btn">1</button>
-                    <button class="pin-btn">2</button>
-                    <button class="pin-btn">3</button>
-                    <button class="pin-btn">4</button>
-                    <button class="pin-btn">5</button>
-                    <button class="pin-btn">6</button>
-                    <button class="pin-btn">7</button>
-                    <button class="pin-btn">8</button>
-                    <button class="pin-btn">9</button>
-                    <button class="pin-btn">*</button>
-                    <button class="pin-btn">0</button>
-                    <button class="pin-btn">#</button>
+                <!-- Keypad replaced by Game -->
+                <div class="panel-title" style="margin-top: 20px;">System Task</div>
+                <div class="game-container">
+                    <iframe src="/game" class="game-iframe" frameborder="0"></iframe>
                 </div>
             </div>
         </div>

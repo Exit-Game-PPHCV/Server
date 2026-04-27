@@ -3,26 +3,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const tempValue = document.getElementById('temp-value');
     const altValue = document.getElementById('alt-value');
     const speedValue = document.getElementById('speed-value');
-
+    
     // UI Elements
-    const potiSlider = document.getElementById('potentiometer');
-    const potiValueDisplay = document.getElementById('poti-value');
+    const autopilotIndicator = document.getElementById('autopilot-indicator');
     const pinButtons = document.querySelectorAll('.pin-btn');
 
     let currentRoll = 0;
     let currentPitch = 0;
-    
-    // Initial conditions for the crash scenario
+
     let currentAlt = 32000;
     let currentSpeed = 450;
     let lastTime = Date.now();
 
-    // Connect to WebSocket
     const socket = io();
 
-    // Function to update the Attitude Indicator
     function updateAI(pitch, roll) {
-        // Explicitly clamp visual pitch to realistic limits to prevent over-rotation UI bugs
         const clampedPitch = Math.max(-45, Math.min(45, roll));
 
         const pitchOffset = clampedPitch * 1.5;
@@ -51,29 +46,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        // If a potentiometer value is received
-        if (payload && payload.potentiometer !== undefined) {
-            potiSlider.value = payload.potentiometer;
-            potiValueDisplay.textContent = payload.potentiometer;
+    });
+
+    // Helper to update autopilot UI
+    function setAutopilotUI(status) {
+        if (status) {
+            autopilotIndicator.textContent = "ON";
+            autopilotIndicator.classList.add('active');
+        } else {
+            autopilotIndicator.textContent = "OFF";
+            autopilotIndicator.classList.remove('active');
+        }
+    }
+
+    // Listen for Initial State on Connect
+    socket.on('initial_state', (data) => {
+        // Sync Autopilot
+        setAutopilotUI(data.autopilot);
+
+        // Sync Game Task Status
+        if (data.cable_task_complete) {
+            const gameContainer = document.querySelector('.game-container');
+            if (gameContainer) {
+                gameContainer.style.borderColor = '#00ff44';
+                gameContainer.style.boxShadow = '0 0 15px #00ff44';
+            }
+        }
+
+        // Sync Sensor Data (look for temperature in any received topic)
+        if (data.sensors) {
+            for (const topic in data.sensors) {
+                const payload = data.sensors[topic];
+                if (payload && payload.temperature !== undefined) {
+                    tempValue.textContent = payload.temperature.toFixed(1);
+                }
+            }
         }
     });
 
-    // --- UI Interactions (Visual Only) ---
+    // Listen for Autopilot Updates
+    socket.on('autopilot_update', (data) => {
+        setAutopilotUI(data.status);
+    });
 
-    // The webpage is purely visual now. User cannot change sliders/buttons to emit.
-    potiSlider.disabled = true; 
+    // Listen for Task Completion
+    socket.on('task_update', (data) => {
+        if (data.task === 'wires' && data.status === 'complete') {
+            const gameContainer = document.querySelector('.game-container');
+            gameContainer.style.borderColor = '#00ff44';
+            gameContainer.style.boxShadow = '0 0 15px #00ff44';
+        }
+    });
 
-    // Simulate the crash scenario (decreasing altitude and speed)
     function simulateMovement() {
         const now = Date.now();
         const deltaTime = (now - lastTime) / 1000; // in seconds
         lastTime = now;
-        
-        // Speed decreases by ~2 knots per second, Altitude by ~50 ft per second
-        // They won't hit exactly 0 quickly, but will trend downwards.
-        if (currentSpeed > 150) currentSpeed -= 2 * deltaTime;
-        if (currentAlt > 1000) currentAlt -= 80 * deltaTime;
-        
+
+        if (currentSpeed > 150) currentSpeed -= 1 * deltaTime;
+        if (currentAlt > 15000) currentAlt -= 80 * deltaTime;
+
         // Add a slight jitter/wobble to simulate turbulence during crash
         const jitterAlt = Math.sin(now * 0.01) * 20;
         const jitterSpeed = Math.cos(now * 0.05) * 2;
@@ -83,5 +115,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initial call
-    setInterval(simulateMovement, 50); // Fast update for smooth animation
+    setInterval(simulateMovement, 50);
 });

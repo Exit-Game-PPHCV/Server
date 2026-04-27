@@ -1,2 +1,4 @@
 Flask
+Flask-SocketIO
 paho-mqtt>=2.0.0
+eventlet
