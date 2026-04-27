@@ -1,17 +1,64 @@
 services:
+  # ==========================================
+  # DNS-Server (Pi-hole)
+  # ==========================================
+  dnsmasq:
+    image: 4km3/dnsmasq:latest
+    container_name: dns-server
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
+    restart: unless-stopped
+
+  # ==========================================
+  # Reverse Proxy (Traefik)
+  # ==========================================
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.exit.game`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+  # ==========================================
   # MQTT Broker (Mosquitto)
+  # ==========================================
   mqtt:
-    image: eclipse-mosquitto:2
+    image: eclipse-mosquitto:latest
     container_name: mosquitto
     restart: unless-stopped
     ports:
-      - "1883:1883"
+      - "1883:1883" 
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
 
+  # ==========================================
   # Translation Layer (Zigbee2MQTT)
+  # ==========================================
   zigbee2mqtt:
     image: koenkk/zigbee2mqtt:latest
     container_name: zigbee2mqtt
@@ -36,15 +83,28 @@ services:
       - "traefik.http.services.z2m.loadbalancer.server.port=8080"
 
   # ==========================================
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.z2m.rule=Host(`z2m.exit.game`)"
+      - "traefik.http.routers.z2m.entrypoints=websecure"
+      - "traefik.http.routers.z2m.tls=true"
+      - "traefik.http.services.z2m.loadbalancer.server.port=8080"
+
+  # ==========================================
   # Webserver (Flask)
+  # ==========================================
   flask-web:
     build: ./flask-app
     container_name: flask_dashboard
     restart: unless-stopped
-    ports:
-      - "5000:5000"
     depends_on:
       - mqtt
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flask.rule=Host(`flask.exit.game`)"
+      - "traefik.http.routers.flask.entrypoints=websecure"
+      - "traefik.http.routers.flask.tls=true"
+      - "traefik.http.services.flask.loadbalancer.server.port=5000"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.flask.rule=Host(`flask.exit.game`)"

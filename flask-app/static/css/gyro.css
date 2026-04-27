@@ -1,0 +1,44 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1e1e24;
+    color: #8c92a6;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+#container {
+    text-align: center;
+}
+
+#info {
+    font-size: 1.2rem;
+    opacity: 0.7;
+}
+
+#values {
+    display: flex;
+    gap: 40px;
+}
+
+.axis {
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
+.axis span {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #d8d8e0;
+    display: block;
+    margin-top: 10px;
+}

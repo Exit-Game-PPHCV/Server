@@ -1,76 +1,119 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const aiSky = document.querySelector('.ai-sky');
-    const aiGround = document.querySelector('.ai-ground');
+    const aiInner = document.querySelector('.ai-inner');
     const tempValue = document.getElementById('temp-value');
     const altValue = document.getElementById('alt-value');
     const speedValue = document.getElementById('speed-value');
+    
+    // UI Elements
+    const autopilotIndicator = document.getElementById('autopilot-indicator');
+    const pinButtons = document.querySelectorAll('.pin-btn');
 
     let currentRoll = 0;
     let currentPitch = 0;
 
-    // Function to update the Attitude Indicator
+    let currentAlt = 32000;
+    let currentSpeed = 450;
+    let lastTime = Date.now();
+
+    const socket = io();
+
     function updateAI(pitch, roll) {
-        // pitch: -90 to 90
-        // roll: -180 to 180
-        const pitchOffset = pitch * 2; // scale for visual effect
-        aiSky.style.transform = `rotate(${roll}deg) translateY(${pitchOffset}px)`;
-        aiGround.style.transform = `rotate(${roll}deg) translateY(${pitchOffset}px)`;
+        const clampedPitch = Math.max(-45, Math.min(45, roll));
+
+        const pitchOffset = clampedPitch * 1.5;
+        aiInner.style.transform = `rotate(${pitch}deg) translateY(${pitchOffset}px)`;
     }
 
-    // Function to fetch sensor data
-    async function fetchSensorData() {
-        try {
-            const response = await fetch('/api/sensors');
-            const data = await response.json();
-            
-            // Example data structure from app.py:
-            // latest_sensor_data[msg.topic] = payload
-            // Assuming something like 'zigbee2mqtt/sensor1': { temperature: 22.5, roll: 5, pitch: -2 }
-            
-            let foundTemp = null;
-            let foundRoll = 0;
-            let foundPitch = 0;
+    socket.on('cockpit_gyro', (data) => {
+        currentPitch = data.pitch || 0;
+        currentRoll = data.roll || 0;
+        updateAI(currentPitch, currentRoll);
+    });
 
-            for (const topic in data) {
-                const payload = data[topic];
-                if (payload.temperature !== undefined) foundTemp = payload.temperature;
-                if (payload.roll !== undefined) foundRoll = payload.roll;
-                if (payload.pitch !== undefined) foundPitch = payload.pitch;
-            }
+    // Listen for MQTT Data
+    socket.on('mqtt_update', (msg) => {
+        const payload = msg.data;
+        if (payload && payload.temperature !== undefined) {
+            tempValue.textContent = payload.temperature.toFixed(1);
+        }
+        // If a pinpad key is received via MQTT, light up the corresponding button
+        if (payload && payload.key !== undefined) {
+            const keyStr = payload.key.toString();
+            pinButtons.forEach(btn => {
+                if (btn.textContent === keyStr) {
+                    btn.style.backgroundColor = '#4caf50';
+                    setTimeout(() => btn.style.backgroundColor = '', 300);
+                }
+            });
+        }
+    });
 
-            if (foundTemp !== null) {
-                tempValue.textContent = foundTemp.toFixed(1);
-            }
-
-            // Smoothly update AI
-            currentRoll = foundRoll;
-            currentPitch = foundPitch;
-            updateAI(currentPitch, currentRoll);
-
-        } catch (error) {
-            console.error('Error fetching sensor data:', error);
+    // Helper to update autopilot UI
+    function setAutopilotUI(status) {
+        if (status) {
+            autopilotIndicator.textContent = "ON";
+            autopilotIndicator.classList.add('active');
+        } else {
+            autopilotIndicator.textContent = "OFF";
+            autopilotIndicator.classList.remove('active');
         }
     }
 
-    // Simulate some movement for the "wow" factor if no real data is coming in
-    function simulateMovement() {
-        const time = Date.now() * 0.001;
-        const simRoll = Math.sin(time * 0.5) * 5;
-        const simPitch = Math.cos(time * 0.7) * 3;
-        
-        // Only simulate if we don't have real sensor data (this is a simple check)
-        // In a real app, you might check a flag
-        updateAI(simPitch, simRoll);
+    // Listen for Initial State on Connect
+    socket.on('initial_state', (data) => {
+        // Sync Autopilot
+        setAutopilotUI(data.autopilot);
 
-        // Simulate speed and altitude
-        const simSpeed = 450 + Math.sin(time) * 10;
-        const simAlt = 32000 + Math.cos(time * 0.1) * 100;
-        
-        speedValue.textContent = Math.round(simSpeed);
-        altValue.textContent = Math.round(simAlt);
+        // Sync Game Task Status
+        if (data.cable_task_complete) {
+            const gameContainer = document.querySelector('.game-container');
+            if (gameContainer) {
+                gameContainer.style.borderColor = '#00ff44';
+                gameContainer.style.boxShadow = '0 0 15px #00ff44';
+            }
+        }
+
+        // Sync Sensor Data (look for temperature in any received topic)
+        if (data.sensors) {
+            for (const topic in data.sensors) {
+                const payload = data.sensors[topic];
+                if (payload && payload.temperature !== undefined) {
+                    tempValue.textContent = payload.temperature.toFixed(1);
+                }
+            }
+        }
+    });
+
+    // Listen for Autopilot Updates
+    socket.on('autopilot_update', (data) => {
+        setAutopilotUI(data.status);
+    });
+
+    // Listen for Task Completion
+    socket.on('task_update', (data) => {
+        if (data.task === 'wires' && data.status === 'complete') {
+            const gameContainer = document.querySelector('.game-container');
+            gameContainer.style.borderColor = '#00ff44';
+            gameContainer.style.boxShadow = '0 0 15px #00ff44';
+        }
+    });
+
+    function simulateMovement() {
+        const now = Date.now();
+        const deltaTime = (now - lastTime) / 1000; // in seconds
+        lastTime = now;
+
+        if (currentSpeed > 150) currentSpeed -= 1 * deltaTime;
+        if (currentAlt > 15000) currentAlt -= 80 * deltaTime;
+
+        // Add a slight jitter/wobble to simulate turbulence during crash
+        const jitterAlt = Math.sin(now * 0.01) * 20;
+        const jitterSpeed = Math.cos(now * 0.05) * 2;
+
+        speedValue.textContent = Math.round(currentSpeed + jitterSpeed);
+        altValue.textContent = Math.round(currentAlt + jitterAlt);
     }
 
     // Initial call
-    setInterval(fetchSensorData, 1000);
-    setInterval(simulateMovement, 50); // Fast update for smooth AI animation
+    setInterval(simulateMovement, 50);
 });
