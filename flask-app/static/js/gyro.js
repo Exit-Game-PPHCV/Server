@@ -6,7 +6,14 @@ const infoEl = document.getElementById('info');
 const valuesEl = document.getElementById('values');
 let isRunning = false;
 
+let lastEmitTime = 0;
+
 function handleOrientation(event) {
+    const now = Date.now();
+    // Throttle to roughly 20Hz (50ms) to prevent crashing the server
+    if (now - lastEmitTime < 50) return;
+    lastEmitTime = now;
+
     let pitch = Math.round(event.beta || 0);
     let roll = Math.round(event.gamma || 0);
 
