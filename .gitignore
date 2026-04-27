@@ -1,5 +1,24 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+.pytest_cache/
+
+# Virtual environment and local env files
+venv/
+.venv/
+env/
+ENV/
+.env
+.env.*
+pip-wheel-metadata/
+build/
+dist/
+
+# Service runtime data
 mosquitto/data/
 mosquitto/log/
 zigbee2mqtt-data/
-__pycache__/
-*.pyc
+
