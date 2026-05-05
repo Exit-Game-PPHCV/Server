@@ -127,13 +127,13 @@ def handle_sensor_data(data):
     pitch = data.get('pitch', 0)
     roll = data.get('roll', 0)
 
-    pitch = max(-45, min(45, pitch))
-    roll = max(-45, min(45, roll))
+    pitch = max(-35, min(35, pitch))
+    roll = max(-35, min(35, roll))
     
     socketio.emit('cockpit_gyro', {'pitch': pitch, 'roll': roll})
 
-    servo_pitch = int(45 + ((pitch + 45) * (135 - 45) / 90))
-    servo_roll = int(45 + ((roll + 45) * (135 - 45) / 90))
+    servo_pitch = int(pitch + 90)
+    servo_roll = int(roll + 90)
 
     payload = json.dumps({"pitch_servo": servo_pitch, "roll_servo": servo_roll})
     
