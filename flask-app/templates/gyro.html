@@ -9,11 +9,12 @@
 </head>
 
 <body>
+    <div id="rotate-warning">Bitte drehe dein Gerät ins Querformat</div>
     <div id="container">
         <div id="info">Tippe auf den Bildschirm, um zu starten</div>
         <div id="values" style="display: none;">
-            <div class="axis">PITCH<br><span id="pitch">0</span>°</div>
-            <div class="axis">ROLL<br><span id="roll">0</span>°</div>
+            <div class="axis">ROLL<br><span id="pitch">0</span>°</div>
+            <div class="axis">PITCH<br><span id="roll">0</span>°</div>
         </div>
     </div>
     <script src="{{ url_for('static', filename='js/socket.io.js') }}"></script>

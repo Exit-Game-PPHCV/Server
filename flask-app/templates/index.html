@@ -2,10 +2,130 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/cockpit.css') }}">
+<style>
+    .radio-panel:hover { opacity: 0.8; }
+    .restricted-mode .game-iframe { pointer-events: none; filter: grayscale(1) brightness(0.4); }
+    /* Radio Panel remains clickable even in restricted mode */
+    .announcing .game-iframe { pointer-events: none; filter: brightness(0.6); }
+    .announcing #radio-panel { pointer-events: none; opacity: 0.5; }
+    .subtitle-active { color: #ffcc00 !important; text-shadow: 0 0 10px #ffcc00 !important; }
+
+    /* --- Temperature Alarm --- */
+    .temp-alarm-active .dashboard {
+        border-top-color: #ff2200;
+        box-shadow: inset 0 0 60px rgba(255, 0, 0, 0.15);
+    }
+    .temp-alarm-active .cockpit-frame {
+        animation: cockpitShake 0.15s ease-in-out infinite alternate;
+    }
+    /* Red pulsing vignette overlay */
+    .alarm-vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 100;
+        opacity: 0;
+        background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 0, 0, 0.35) 100%);
+        transition: opacity 0.3s ease;
+    }
+    .temp-alarm-active .alarm-vignette {
+        opacity: 1;
+        animation: alarmPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes alarmPulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+    /* Restrict interactions during alarm */
+    .temp-alarm-active .game-iframe { pointer-events: none; filter: brightness(0.4) saturate(0.3); }
+    .temp-alarm-active #radio-panel { pointer-events: none; opacity: 0.4; }
+    /* OVERHEAT badge on temp display */
+    .overheat-badge {
+        display: none;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #ff2200;
+        text-shadow: 0 0 8px #ff2200;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-top: 8px;
+        animation: blinkBadge 0.6s step-end infinite;
+    }
+    .temp-alarm-active .overheat-badge { display: block; }
+    .temp-alarm-active #temp-value {
+        color: #ff2200 !important;
+        text-shadow: 0 0 15px #ff2200 !important;
+    }
+    @keyframes blinkBadge {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+    }
+
+    /* --- Neigung Challenge Overlay --- */
+    .neigung-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 90;
+        pointer-events: none;
+        background: rgba(0, 0, 0, 0.25);
+    }
+    .neigung-overlay.active { display: flex; }
+    .neigung-arrow {
+        font-size: 7rem;
+        color: #ffcc00;
+        text-shadow: 0 0 30px #ffcc00;
+        animation: arrowPulse 1s ease-in-out infinite;
+    }
+    @keyframes arrowPulse {
+        0%, 100% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.15); opacity: 1; }
+    }
+    .neigung-label {
+        font-family: 'Courier New', monospace;
+        font-size: 1.1rem;
+        color: #ffcc00;
+        text-shadow: 0 0 8px #ffcc00;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+    }
+    .neigung-progress-track {
+        width: 200px;
+        height: 8px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .neigung-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: #ffcc00;
+        box-shadow: 0 0 10px #ffcc00;
+        border-radius: 4px;
+        transition: width 0.1s linear;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="cockpit-container">
+    <!-- Alarm Vignette Overlay -->
+    <div class="alarm-vignette"></div>
+
+    <!-- Neigung Challenge Overlay -->
+    <div class="neigung-overlay" id="neigung-overlay">
+        <div class="neigung-arrow" id="neigung-arrow">↑</div>
+        <div class="neigung-label">KURSKORREKTUR</div>
+        <div class="neigung-progress-track">
+            <div class="neigung-progress-bar" id="neigung-bar"></div>
+        </div>
+    </div>
+
     <!-- Sky View -->
     <div class="sky-bg"></div>
     <div class="clouds"></div>
@@ -52,9 +172,10 @@
                 </div>
 
                 <!-- NEW: Visual Radio -->
-                <div class="radio-panel">
+                <div class="radio-panel" id="radio-panel" style="cursor: pointer; transition: all 0.3s;">
                     <div class="panel-title" style="margin-top: 15px;">VHF COM</div>
                     <div class="radio-display">121.500</div>
+                    <div style="font-size: 0.6em; color: #888; text-align: center; margin-top: 4px;">CLICK TO REPEAT</div>
                 </div>
             </div>
 
@@ -65,6 +186,7 @@
                     <span id="temp-value" class="display-value">--.-</span>
                     <span class="unit">°C</span>
                 </div>
+                <div class="overheat-badge" id="overheat-badge">⚠ OVERHEAT ⚠</div>
 
                 <div class="panel-title" style="margin-top: 20px;">System Status</div>
                 <div class="display-container">
