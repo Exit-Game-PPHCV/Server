@@ -156,12 +156,20 @@ def on_message(client, userdata, msg):
         payload = json.loads(msg.payload.decode('utf-8'))
         latest_sensor_data[msg.topic] = payload
 
-        # --- Temperatur konvertieren BEVOR der allgemeine Emit ---
-        if 'temperature' in payload:
-            raw = int(payload['temperature'])
-            temp_c = raw / 100.0
-            payload['temperature'] = temp_c
-            print(f"Temperatur auf {msg.topic}: {temp_c} °C (raw: {raw})")
+        # --- ZIGBEE2MQTT NATIVE TRANSLATION ---
+        # Wenn native ESP32-Zigbee Geräte genutzt werden, senden sie Standard-Endpoints (state_l1, state_l2 = "ON"/"OFF").
+        # Wir übersetzen diese anhand des Gerätenamens (Topic) in unsere Spiel-Variablen:
+        topic_name = msg.topic.split('/')[-1].lower()
+        
+        # ESP 1: Laser & Frequenzen
+        if 'laser' in topic_name or 'frequenz' in topic_name:
+            if 'state_l1' in payload: payload['ldrSolved'] = (payload['state_l1'] == 'ON')
+            if 'state_l2' in payload: payload['puzzleSolved'] = (payload['state_l2'] == 'ON')
+            
+        # ESP 2: Keypad & Temperatur
+        elif 'keypad' in topic_name or 'temp' in topic_name:
+            if 'state_l1' in payload: payload['keypadSolved'] = (payload['state_l1'] == 'ON')
+            if 'state_l2' in payload: payload['temperatureAlarm'] = (payload['state_l2'] == 'ON')
 
         socketio.emit('mqtt_update', {'topic': msg.topic, 'data': payload})
 

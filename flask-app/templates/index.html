@@ -39,23 +39,10 @@
     /* Restrict interactions during alarm */
     .temp-alarm-active .game-iframe { pointer-events: none; filter: brightness(0.4) saturate(0.3); }
     .temp-alarm-active #radio-panel { pointer-events: none; opacity: 0.4; }
-    /* OVERHEAT badge on temp display */
-    .overheat-badge {
-        display: none;
-        font-family: 'Courier New', monospace;
-        font-size: 0.9rem;
-        font-weight: bold;
-        color: #ff2200;
-        text-shadow: 0 0 8px #ff2200;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-top: 8px;
-        animation: blinkBadge 0.6s step-end infinite;
-    }
-    .temp-alarm-active .overheat-badge { display: block; }
-    .temp-alarm-active #temp-value {
+    .temp-alarm-active #temp-status {
         color: #ff2200 !important;
         text-shadow: 0 0 15px #ff2200 !important;
+        animation: blinkBadge 0.6s step-end infinite;
     }
     @keyframes blinkBadge {
         0%, 49% { opacity: 1; }
@@ -181,12 +168,10 @@
 
             <!-- Right Side Sensors -->
             <div class="panel">
-                <div class="panel-title">Cabin Temp</div>
+                <div class="panel-title">Cabin Temp Status</div>
                 <div class="display-container">
-                    <span id="temp-value" class="display-value">--.-</span>
-                    <span class="unit">°C</span>
+                    <span id="temp-status" class="display-value" style="color: #4caf50; font-size: 1.5rem;">OK</span>
                 </div>
-                <div class="overheat-badge" id="overheat-badge">⚠ OVERHEAT ⚠</div>
 
                 <div class="panel-title" style="margin-top: 20px;">System Status</div>
                 <div class="display-container">
