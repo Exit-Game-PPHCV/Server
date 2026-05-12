@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const aiInner = document.querySelector('.ai-inner');
-    const tempValue = document.getElementById('temp-value');
+    const tempStatus = document.getElementById('temp-status');
     const altValue = document.getElementById('alt-value');
     const speedValue = document.getElementById('speed-value');
 
@@ -43,10 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Listen for MQTT Data
     socket.on('mqtt_update', (msg) => {
-        const payload = msg.data;
-        if (payload && payload.temperature !== undefined) {
-            tempValue.textContent = payload.temperature.toFixed(1);
-        }
+        // Temperature parsing is no longer needed here since we use pure status updates
     });
 
     // Helper to update autopilot UI
@@ -99,15 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         updateUIState();
 
-        // Sync Sensor Data (look for temperature in any received topic)
-        if (data.sensors) {
-            for (const topic in data.sensors) {
-                const payload = data.sensors[topic];
-                if (payload && payload.temperature !== undefined) {
-                    tempValue.textContent = payload.temperature.toFixed(1);
-                }
-            }
-        }
+        // Sync Sensor Data (temperature parsing removed)
     });
 
     // Listen for Autopilot Updates
@@ -136,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isAlarmActive = active;
         if (active) {
             document.body.classList.add('temp-alarm-active');
+            if (tempStatus) tempStatus.textContent = "CRITICAL";
             // Start alarm sound loop (placeholder: static/audio/temperature_alarm.mp3)
             if (!alarmAudio) {
                 alarmAudio = new Audio('/static/audio/temperature_alarm.mp3');
@@ -145,6 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
             alarmAudio.play().catch(e => console.log('Alarm audio failed:', e));
         } else {
             document.body.classList.remove('temp-alarm-active');
+            if (tempStatus) {
+                tempStatus.textContent = "OK";
+                tempStatus.style.color = "#4caf50";
+            }
             if (alarmAudio) {
                 alarmAudio.pause();
                 alarmAudio.currentTime = 0;
