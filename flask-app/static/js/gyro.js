@@ -20,14 +20,27 @@ function handleOrientation(event) {
     rollEl.textContent = roll;
 
     socket.emit('sensor_data', {
-        pitch: pitch,
-        roll: roll
+        pitch: roll,
+        roll: pitch
     });
 }
 
 function startSensor() {
     if (isRunning) return;
 
+    // Versuche Vollbild und Landscape-Lock (funktioniert auf vielen mobilen Browsern)
+    try {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().then(() => {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(console.warn);
+                }
+            }).catch(console.warn);
+        }
+    } catch (e) {
+        console.warn("Fullscreen/Orientation API nicht verfügbar", e);
+    }
+    
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
             .then(permissionState => {

@@ -1,0 +1,108 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #050510;
+    color: #00ffcc;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+}
+
+.landing-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.hud {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 24px;
+    z-index: 10;
+    text-shadow: 0 0 10px #00ffcc;
+}
+
+.hud-item {
+    margin-bottom: 10px;
+}
+
+.warning-msg {
+    color: #ff003c;
+    text-shadow: 0 0 15px #ff003c;
+    font-weight: bold;
+    font-size: 28px;
+    margin-top: 20px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.warning-msg.active {
+    opacity: 1;
+}
+
+.flight-display {
+    position: relative;
+    width: 90vw;
+    height: 80vh;
+    border: 2px solid #00ffcc;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+    overflow: hidden;
+    background: radial-gradient(circle at center, #0a1526 0%, #050510 100%);
+}
+
+#flightCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Win Screen */
+.win-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 255, 204, 0.1);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    color: #00ffcc;
+    text-shadow: 0 0 30px #00ffcc;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1s;
+}
+
+.win-overlay.active {
+    opacity: 1;
+}
+
+.subtitle-display {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    text-align: center;
+    font-size: 26px;
+    color: #ffcc00;
+    text-shadow: 0 0 10px #ffcc00;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.subtitle-display.active {
+    opacity: 1;
+}

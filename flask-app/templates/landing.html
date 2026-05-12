@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="landing-container">
+    <div class="hud">
+        <div class="hud-item">TARGET ALT: <span id="target-alt">8000</span>m</div>
+        <div class="hud-item">CURRENT ALT: <span id="current-alt">8000</span>m</div>
+        <div id="warning-msg" class="warning-msg">OUT OF BOUNDS! +800m PENALTY</div>
+    </div>
+    
+    <!-- Subtitle display for the landing view -->
+    <div id="subtitle-display" class="subtitle-display"></div>
+    
+    <div class="flight-display">
+        <canvas id="flightCanvas"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+{% endblock %}
