@@ -21,11 +21,11 @@ SUBTITLES = {
         {"time": 19000, "text": "Behalt die rote LED am rechten Board im Auge!"},
         {"time": 22500, "text": "Sobald der Alarm schrillt, musst du den Sensor da drüben kühlen –"},
         {"time": 26500, "text": "nimm das Kältespray oder fächel Luft zu, egal was, aber lass die Temperatur nicht steigen!"},
-        {"time": 33000, "text": "Und als wäre das nicht genug: Die Kiste kippt uns weg!"},
-        {"time": 37000, "text": "Schau auf das Modellflugzeug vor dir."},
-        {"time": 40000, "text": "Nimm das Handy als Steuerknüppel und bring die Flügel sofort wieder in die Waagerechte."},
-        {"time": 45000, "text": "Erst wenn das Modell gerade steht und die 'Stable'-LED leuchtet, haben wir wieder eine stabile Fluglage."},
-        {"time": 50500, "text": "Halt uns stabil, während wir versuchen, die Systeme nacheinander zu flicken."},
+        {"time": 33000, "text": "Achtung, starke Seitenwinde! Wir kommen vom Kurs ab."},
+        {"time": 37000, "text": "Schau auf das Dashboard: Wenn der Kurskorrektur-Alarm auslöst, schnapp dir sofort das Steuer-Handy."},
+        {"time": 42000, "text": "Die Pfeile auf dem Cockpit-Bildschirm zeigen dir, in welche Richtung wir driften."},
+        {"time": 46000, "text": "Neige das Handy vorsichtig in genau diese Richtung, um gegenzusteuern, bis der Balken voll ist."},
+        {"time": 51000, "text": "Wir müssen zwingend auf Kurs bleiben, während wir die Systeme flicken."},
         {"time": 55000, "text": "Los, an die Arbeit!"},
         {"time": 59000, "text": ""}
     ],
@@ -163,13 +163,13 @@ def on_message(client, userdata, msg):
         
         # ESP 1: Laser & Frequenzen
         if 'laser' in topic_name or 'frequenz' in topic_name:
-            if 'state_l1' in payload: payload['ldrSolved'] = (payload['state_l1'] == 'ON')
-            if 'state_l2' in payload: payload['puzzleSolved'] = (payload['state_l2'] == 'ON')
+            if 'state_1' in payload: payload['ldrSolved'] = (payload['state_1'] == 'ON')
+            if 'state_2' in payload: payload['puzzleSolved'] = (payload['state_2'] == 'ON')
             
         # ESP 2: Keypad & Temperatur
         elif 'keypad' in topic_name or 'temp' in topic_name:
-            if 'state_l1' in payload: payload['keypadSolved'] = (payload['state_l1'] == 'ON')
-            if 'state_l2' in payload: payload['temperatureAlarm'] = (payload['state_l2'] == 'ON')
+            if 'state_3' in payload: payload['keypadSolved'] = (payload['state_3'] == 'ON')
+            if 'state_4' in payload: payload['temperatureAlarm'] = (payload['state_4'] == 'ON')
 
         socketio.emit('mqtt_update', {'topic': msg.topic, 'data': payload})
 
