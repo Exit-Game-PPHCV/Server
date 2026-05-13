@@ -309,11 +309,13 @@ def handle_connect():
         'temperature_alarm_active': temperature_alarm_active
     }
     socketio.emit('initial_state', initial_state)
-    
+    print("Cockpit verbunden - Initialer Status synchronisiert. Warte auf Start-Signal.")
+
+@socketio.on('request_start')
+def handle_request_start():
+    print("Start-Signal empfangen - Spiel beginnt.")
     seq_id = get_current_subtitle_sequence()
     emit_subtitle(seq_id)
-    
-    print("Cockpit verbunden - Initialer Status synchronisiert.")
 
 @socketio.on('repeat_transmission')
 def handle_repeat_transmission():
