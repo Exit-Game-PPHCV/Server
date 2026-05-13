@@ -163,13 +163,13 @@ def on_message(client, userdata, msg):
         
         # ESP 1: Laser & Frequenzen
         if 'laser' in topic_name or 'frequenz' in topic_name:
-            if 'state_1' in payload: payload['ldrSolved'] = (payload['state_1'] == 'ON')
-            if 'state_2' in payload: payload['puzzleSolved'] = (payload['state_2'] == 'ON')
+            if 'state_1' in payload: payload['puzzleSolved'] = (payload['state_1'] == 'ON')
+            if 'state_2' in payload: payload['ldrSolved'] = (payload['state_2'] == 'ON')
             
         # ESP 2: Keypad & Temperatur
         elif 'keypad' in topic_name or 'temp' in topic_name:
-            if 'state_3' in payload: payload['keypadSolved'] = (payload['state_3'] == 'ON')
-            if 'state_4' in payload: payload['temperatureAlarm'] = (payload['state_4'] == 'ON')
+            if 'state_1' in payload: payload['keypadSolved'] = (payload['state_1'] == 'ON')
+            if 'state_2' in payload: payload['temperatureAlarm'] = (payload['state_2'] == 'ON')
 
         socketio.emit('mqtt_update', {'topic': msg.topic, 'data': payload})
 
