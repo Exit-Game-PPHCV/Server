@@ -107,7 +107,7 @@ neigung = False
 cable = False
 laser = False
 autopilot = False
-temperature_alarm_active = False
+temperature_alarm_active = True
 cable_count = 0
  
 last_send_time = 0
