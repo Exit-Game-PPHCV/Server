@@ -177,6 +177,7 @@ def on_message(client, userdata, msg):
         # PRIORITÄT: Unterdrückt während Neigung-Challenge, Finale oder Spielende
         if 'temperatureAlarm' in payload:
             alarm_active = bool(payload['temperatureAlarm'])
+            
             if alarm_active != temperature_alarm_active:
                 temperature_alarm_active = alarm_active
                 if neigung_challenge_active or keypad or game_finished:
@@ -187,13 +188,13 @@ def on_message(client, userdata, msg):
                         print("TEMPERATURALARM AKTIV - Sensor überhitzt!")
                     else:
                         print("Temperaturalarm aufgelöst - Sensor abgekühlt.")
-                if not alarm_active and not temparatur:
-                    temparatur = True
-                    print("Kühl-Task abgeschlossen.")
-                    # Erste Neigung-Challenge starten
-                    last_neigung_challenge_time = 0
-                    start_neigung_challenge()
-                    print("Erste Neigung-Challenge gestartet.")
+            
+            # TASK-ABSCHLUSS ROBUST GEMACHT:
+            # Wir prüfen bei jedem Payload, ob der Alarm AUS ist.
+            # Falls ja, gilt der Task als bestanden - egal ob er sich gerade erst geändert hat oder nicht!
+            if not alarm_active and not temparatur:
+                temparatur = True
+                print("Kühl-Task als erledigt markiert! Warte auf passenden Zeitpunkt für Neigung-Challenge.")
 
         # --- Laser-Task (LDR-Sensor) ---
         if 'ldrSolved' in payload:
@@ -223,10 +224,16 @@ def on_message(client, userdata, msg):
                 # Aktiven Temp-Alarm beenden
                 if temperature_alarm_active:
                     socketio.emit('temperature_alarm', {'active': False})
+                
                 socketio.emit('start_landing_sequence')
-                seq_id = "landing_task"
-                emit_subtitle(seq_id)
                 print("FINALE: Keypad gelöst - Alle wiederkehrenden Tasks gestoppt - Landing gestartet.")
+                
+                # Wir verzögern das Audio um 2 Sekunden, damit der Browser Zeit hat,
+                # die Seite /landing zu laden, bevor der Ton abgespielt wird!
+                def delayed_landing_sub():
+                    time.sleep(2)
+                    emit_subtitle("landing_task")
+                socketio.start_background_task(delayed_landing_sub)
 
         # --- Autopilot ---
         if 'autopilot' in payload:
@@ -315,7 +322,17 @@ def handle_connect():
 def handle_request_start():
     print("Start-Signal empfangen - Spiel beginnt.")
     seq_id = get_current_subtitle_sequence()
-    emit_subtitle(seq_id)
+    
+    # Bugfix: Falls durch "missgeschicke" das Keypad schon gelöst war, 
+    # MÜSSEN wir den Browser zwingen, jetzt die Seite zu wechseln!
+    if seq_id == "landing_task" or keypad:
+        socketio.emit('start_landing_sequence')
+        def delayed_landing_sub():
+            time.sleep(2)
+            emit_subtitle("landing_task")
+        socketio.start_background_task(delayed_landing_sub)
+    else:
+        emit_subtitle(seq_id)
 
 @socketio.on('repeat_transmission')
 def handle_repeat_transmission():
@@ -390,10 +407,17 @@ def handle_sensor_data(data):
         last_send_time = current_time
         return
 
-    # Neue Challenge starten wenn Zeit abgelaufen + kein Subtitle läuft
-    if temparatur and not neigung_challenge_active:
-        subtitle_safe = (current_time - last_subtitle_end_time) > SUBTITLE_COOLDOWN
-        if last_neigung_challenge_time > 0 and current_time - last_neigung_challenge_time >= NEIGUNG_INTERVAL and subtitle_safe:
+    # Subtitles müssen beendet sein (z.B. Intro fertig gesprochen)
+    subtitle_safe = current_time > last_subtitle_end_time
+
+    # 1. Erste Challenge starten (sobald Temperatur OK ist und das Intro vorbei ist)
+    if temparatur and not neigung_challenge_active and last_neigung_challenge_time == 0:
+        if subtitle_safe:
+            start_neigung_challenge()
+
+    # 2. Weitere Challenges starten (wenn Cooldown abgelaufen)
+    if temparatur and not neigung_challenge_active and last_neigung_challenge_time > 0:
+        if current_time - last_neigung_challenge_time >= NEIGUNG_INTERVAL and (current_time - last_subtitle_end_time > SUBTITLE_COOLDOWN):
             start_neigung_challenge()
 
     # Aktive Challenge prüfen
