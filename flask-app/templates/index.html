@@ -10,6 +10,45 @@
     .announcing #radio-panel { pointer-events: none; opacity: 0.5; }
     .subtitle-active { color: #ffcc00 !important; text-shadow: 0 0 10px #ffcc00 !important; }
 
+    /* --- Start Screen Overlay --- */
+    #start-screen {
+        position: fixed;
+        inset: 0;
+        background: #000;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.5s ease;
+    }
+    #start-screen h1 {
+        color: #ffcc00;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 5px;
+        margin-bottom: 40px;
+        text-shadow: 0 0 15px #ffcc00;
+    }
+    #start-btn {
+        background: transparent;
+        border: 2px solid #ffcc00;
+        color: #ffcc00;
+        padding: 15px 40px;
+        font-size: 1.5rem;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        transition: all 0.3s;
+        box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+    }
+    #start-btn:hover {
+        background: #ffcc00;
+        color: #000;
+        box-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
+    }
+
     /* --- Temperature Alarm --- */
     .temp-alarm-active .dashboard {
         border-top-color: #ff2200;
@@ -101,6 +140,12 @@
 
 {% block content %}
 <div class="cockpit-container">
+    <!-- Start Screen Overlay -->
+    <div id="start-screen">
+        <h1>FLIGHT CONTROL SYSTEM</h1>
+        <button id="start-btn">SYSTEM STARTEN</button>
+    </div>
+
     <!-- Alarm Vignette Overlay -->
     <div class="alarm-vignette"></div>
 

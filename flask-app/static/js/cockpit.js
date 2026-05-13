@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const radioDisplay = document.querySelector('.radio-display');
     const tipDisplay = document.getElementById('tip-display');
     const radioPanel = document.getElementById('radio-panel');
+    const startScreen = document.getElementById('start-screen');
+    const startBtn = document.getElementById('start-btn');
 
     let currentRoll = 0;
     let currentPitch = 0;
@@ -27,6 +29,25 @@ document.addEventListener('DOMContentLoaded', () => {
     let alarmAudio = null;
 
     const socket = io();
+
+    // --- Start Screen Logic ---
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            if (startScreen) {
+                startScreen.style.opacity = '0';
+                setTimeout(() => {
+                    startScreen.style.display = 'none';
+                }, 500);
+            }
+            // Request the server to start the game sequence (which sends the first subtitle)
+            socket.emit('request_start');
+            
+            // Resume Audio Context in case browser requires it
+            if (currentAudio && currentAudio.paused) {
+                currentAudio.play().catch(e => console.log('Audio resume failed:', e));
+            }
+        });
+    }
 
     function updateAI(pitch, roll) {
         const clampedPitch = Math.max(-45, Math.min(45, roll));
