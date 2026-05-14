@@ -105,6 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // SFX Listener für kurze Sounds (parallel zur Sprache)
+    socket.on('play_sfx', (data) => {
+        if (data.id) {
+            const sfx = new Audio(`/static/audio/${data.id}.mp3`);
+            sfx.play().catch(e => console.log("SFX play failed:", e));
+        }
+    });
+
     // Helper: Calculate ideal altitude at a given time (in seconds)
     function getIdealAltitude(t) {
         if (t >= GAME_DURATION_SEC) return 0;

@@ -63,12 +63,10 @@ SUBTITLES = {
     ],
     "landing_task": [
         {"time": 0, "text": "Der Tower hat uns! Wir beginnen den Sinkflug aus 8000 Metern."},
-        {"time": 5000, "text": "Captain, du musst jetzt die Höhe über den Steuerbildschirm steuern."},
-        {"time": 10000, "text": "Halt das Flugzeug exakt in dem Kasten auf dem Bildschirm!"},
-        {"time": 15000, "text": "Konzentrier dich: Der Kasten wird immer kleiner, je näher wir dem Boden kommen –"},
-        {"time": 20000, "text": "am Ende ist er nur noch ein Drittel so groß."},
-        {"time": 24000, "text": "Wenn du den Rahmen verlierst, reißt uns der Aufwind wieder 500 Meter hoch."},
-        {"time": 30000, "text": ""}
+        {"time": 5000, "text": "Captain, du musst jetzt die Höhe über das Handy steuern."},
+        {"time": 10000, "text": "Halt das Flugzeug exakt in dem Bereich auf dem Bildschirm bis wir gelandet sind!"},
+        {"time": 17000, "text": "Konzentrier dich: wenn du den Korridor verlässt, reißt uns der Wind wieder zurück."},
+        {"time": 23000, "text": ""}
     ],
     "landing_success": [
         {"time": 0, "text": "Wir sind unten! Captain, das war Millimeterarbeit unter extremem Druck."},
@@ -414,6 +412,10 @@ def handle_landing_complete():
         socketio.emit('neigung_challenge_complete')
     if temperature_alarm_active:
         socketio.emit('temperature_alarm', {'active': False})
+    
+    # SFX für das Aufsetzen triggern (parallel zur Sprache)
+    socketio.emit('play_sfx', {'id': 'landing_touchdown'})
+    
     seq_id = "landing_success"
     emit_subtitle(seq_id)
     socketio.emit('game_finished')
