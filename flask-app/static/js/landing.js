@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Draw Tolerance Tunnel
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(150, 200, 255, 0.15)'; // less neon
-        ctx.lineWidth = 25; // narrower tunnel visually
+        ctx.lineWidth = 40; // Wider tunnel visually for easier gameplay
         for (let i = 0; i <= steps; i++) {
             const t = (i / steps) * GAME_DURATION_SEC;
             const alt = getIdealAltitude(t);
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // WIN CONDITION: Zeit abgelaufen UND in der sicheren Zone (Tunnel)
         if (timeElapsed >= GAME_DURATION_SEC) {
             const altDiff = Math.abs(planeAltitude - targetAltitude);
-            const toleranceAtEnd = 100; // Letzte Toleranz-Stufe
+            const toleranceAtEnd = 250; // Etwas großzügigeres Ende (war 100)
             
             if (altDiff <= toleranceAtEnd) {
                 targetAltitude = 0;
@@ -255,9 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Collision / Boundaries
         const altDifference = planeAltitude - targetAltitude; // positive = above path
         
-        // Tolerance shrinks over time: from 600m to 100m (much narrower)
+        // Tolerance shrinks over time: from 800m to 250m (großzügiger)
         const progress = timeElapsed / GAME_DURATION_SEC;
-        const currentTolerance = 600 - (500 * progress);
+        const currentTolerance = 800 - (550 * progress);
 
         if (Math.abs(altDifference) > currentTolerance) {
             if (!warningActive) {
