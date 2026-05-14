@@ -450,7 +450,7 @@ def handle_sensor_data(data):
     global last_send_time, neigung, neigung_challenge_active, neigung_hold_start, last_sensor_receive_time
     current_time = time.time()
     last_sensor_receive_time = current_time
-    if current_time - last_send_time < 0.05:
+    if current_time - last_send_time < 0.2:
         return
     pitch = data.get('pitch', 0)
     roll = data.get('roll', 0)
