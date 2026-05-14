@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO
 import paho.mqtt.client as mqtt
@@ -242,9 +245,16 @@ client = mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
 client.on_message = on_message
 
+def mqtt_background_loop():
+    while True:
+        try:
+            client.loop(timeout=0.1)
+        except Exception: pass
+        socketio.sleep(0.1)
+
 try:
     client.connect(broker_adresse, 1883, 60)
-    client.loop_start() 
+    socketio.start_background_task(mqtt_background_loop)
 except Exception as e:
     print("Konnte keine MQTT-Verbindung aufbauen:", e)
 
@@ -500,6 +510,10 @@ def handle_sensor_data(data):
 def background_monitor():
     """Hintergrund-Task: Prüft Inaktivität UND triggert neue Neigung-Challenges."""
     global last_sensor_receive_time, neigung_challenge_active
+    global temparatur, keypad, game_finished, last_subtitle_end_time, last_neigung_challenge_time
+
+    print("Background Monitor gestartet!")
+    
     while True:
         socketio.sleep(1.0)
         current_time = time.time()
@@ -518,10 +532,12 @@ def background_monitor():
             # Erste Challenge
             if last_neigung_challenge_time == 0:
                 if subtitle_safe:
+                    print("Background Monitor: Starte ERSTE Neigungs-Challenge!")
                     start_neigung_challenge()
             # Folge-Challenges
             elif current_time - last_neigung_challenge_time >= NEIGUNG_INTERVAL:
                 if subtitle_safe:
+                    print("Background Monitor: Starte FOLGE Neigungs-Challenge!")
                     start_neigung_challenge()
 
 socketio.start_background_task(background_monitor)
