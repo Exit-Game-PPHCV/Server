@@ -52,6 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Audio erlauben und Server mitteilen, dass wir bereit sind
             socket.emit('landing_ready');
             
+            // Umgebungsgeräusch nach der Ansage (18s) starten
+            setTimeout(() => {
+                const ambient = new Audio('/static/audio/landing_ambient.mp3');
+                ambient.volume = 0.4;
+                ambient.play().catch(e => console.log("Ambient audio failed:", e));
+                window.landingAmbient = ambient;
+            }, 18000);
+
             // Spiel starten
             startTime = performance.now();
             lastTime = performance.now();
@@ -318,6 +326,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawPath();
         drawPlane(canvas.width * 0.9, canvas.height * 0.9, 0); // Landed
+
+        // Triebwerke stoppen
+        if (window.landingAmbient) {
+            window.landingAmbient.pause();
+            window.landingAmbient = null;
+        }
 
         // Tell the server we won so it plays the success sequence
         socket.emit('landing_complete');
