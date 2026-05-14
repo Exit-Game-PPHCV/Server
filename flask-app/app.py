@@ -63,10 +63,10 @@ SUBTITLES = {
     ],
     "landing_task": [
         {"time": 0, "text": "Der Tower hat uns! Wir beginnen den Sinkflug aus 8000 Metern."},
-        {"time": 5000, "text": "Captain, du musst jetzt die Höhe über das Handy steuern."},
-        {"time": 10000, "text": "Halt das Flugzeug exakt in dem Bereich auf dem Bildschirm bis wir gelandet sind!"},
-        {"time": 17000, "text": "Konzentrier dich: wenn du den Korridor verlässt, reißt uns der Wind wieder zurück."},
-        {"time": 23000, "text": ""}
+        {"time": 4000, "text": "Captain, du musst jetzt die Höhe über das Handy steuern."},
+        {"time": 8000, "text": "Halt das Flugzeug exakt in dem Bereich auf dem Bildschirm bis wir gelandet sind!"},
+        {"time": 13000, "text": "Konzentrier dich: wenn du den Korridor verlässt, reißt uns der Wind wieder zurück."},
+        {"time": 18500, "text": ""}
     ],
     "landing_success": [
         {"time": 0, "text": "Wir sind unten! Captain, das war Millimeterarbeit unter extremem Druck."},
