@@ -215,15 +215,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const dt = (timestamp - lastTime) / 1000;
         lastTime = timestamp;
 
-        const timeElapsed = (timestamp - startTime) / 1000;
+        const timeElapsed = Math.min(GAME_DURATION_SEC, (timestamp - startTime) / 1000);
         
         // 1. Update Target
         targetAltitude = getIdealAltitude(timeElapsed);
         
+        // WIN CONDITION: Zeit abgelaufen UND in der sicheren Zone (Tunnel)
         if (timeElapsed >= GAME_DURATION_SEC) {
-            targetAltitude = 0;
-            isGameRunning = false;
-            winGame();
+            const altDiff = Math.abs(planeAltitude - targetAltitude);
+            const toleranceAtEnd = 100; // Letzte Toleranz-Stufe
+            
+            if (altDiff <= toleranceAtEnd) {
+                targetAltitude = 0;
+                isGameRunning = false;
+                winGame();
+            } else {
+                // Warte, bis der Spieler in die Röhre fliegt
+                if (Math.floor(timestamp/1000) % 2 === 0) {
+                    warningMsg.textContent = "ALIGN FOR TOUCHDOWN!";
+                    warningMsg.classList.add('active');
+                    setTimeout(() => warningMsg.classList.remove('active'), 500);
+                }
+            }
         }
 
         // 2. Update Plane Physics
@@ -240,14 +253,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (Math.abs(altDifference) > currentTolerance) {
             if (!warningActive) {
-                // Penalty: Push the plane further away instead of resetting it to target!
-                // Reduziert auf 250m. 800m war größer als die Toleranz, was zu einem 
-                // unausweichlichen "Death Spiral" geführt hat (permanente Strafen).
-                if (altDifference > 0) {
-                    planeAltitude += 250;
+                // NEUE PENALTY: Horizontaler Setback (Zeit-Strafe)
+                // Wir schieben den Startzeitpunkt nach vorne, was das Flugzeug nach links versetzt.
+                const setbackSeconds = 8;
+                const newStartTime = startTime + (setbackSeconds * 1000);
+                
+                // Sicherstellen, dass wir nicht vor den eigentlichen Start springen
+                if (newStartTime < timestamp) {
+                    startTime = newStartTime;
                 } else {
-                    planeAltitude -= 250;
+                    startTime = timestamp; // Max. zurück zum Start
                 }
+
+                warningMsg.textContent = "OUT OF BOUNDS! POSITION SET BACK";
                 showWarning();
             }
         }
