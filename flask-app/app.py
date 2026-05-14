@@ -118,7 +118,7 @@ neigung_challenge_active = False
 neigung_challenge_data = None   # {'axis': 'pitch'|'roll', 'target': int, 'direction': str}
 neigung_hold_start = None
 NEIGUNG_HOLD_DURATION = 3.0     # Sekunden halten
-NEIGUNG_INTERVAL = 180          # 3 Minuten zwischen Challenges
+NEIGUNG_INTERVAL = 100          # ~1.5 Minuten zwischen Challenges
 last_neigung_challenge_time = 0
 
 # --- Task-Priorität ---
@@ -151,7 +151,7 @@ def on_message(client, userdata, msg):
     Neigung kommt NICHT über MQTT → WebSocket von /gyro Seite
     """
     global temparatur, laser, frequenz, keypad, autopilot, temperature_alarm_active
-    global last_neigung_challenge_time
+    global last_neigung_challenge_time, neigung_challenge_active
     try:
         payload = json.loads(msg.payload.decode('utf-8'))
         latest_sensor_data[msg.topic] = payload
@@ -227,13 +227,6 @@ def on_message(client, userdata, msg):
                 
                 socketio.emit('start_landing_sequence')
                 print("FINALE: Keypad gelöst - Alle wiederkehrenden Tasks gestoppt - Landing gestartet.")
-                
-                # Wir verzögern das Audio um 2 Sekunden, damit der Browser Zeit hat,
-                # die Seite /landing zu laden, bevor der Ton abgespielt wird!
-                def delayed_landing_sub():
-                    time.sleep(2)
-                    emit_subtitle("landing_task")
-                socketio.start_background_task(delayed_landing_sub)
 
         # --- Autopilot ---
         if 'autopilot' in payload:
@@ -290,6 +283,60 @@ def game_complete():
 def get_sensors():
     return jsonify(latest_sensor_data)
 
+class DummyMsg:
+    pass
+
+@app.route('/test-trigger')
+def test_trigger():
+    sensor = request.args.get('sensor')
+    state = request.args.get('state')
+    topic = request.args.get('topic', 'zigbee2mqtt/test')
+    
+    if sensor and state:
+        msg = DummyMsg()
+        msg.topic = topic
+        payload = {}
+        if state.upper() == 'ON':
+            payload[sensor] = True
+        elif state.upper() == 'OFF':
+            payload[sensor] = False
+        else:
+            payload[sensor] = state
+
+        msg.payload = json.dumps(payload).encode('utf-8')
+        on_message(None, None, msg)
+        return f"Simulated: {topic} -> {sensor} = {state} <br><br><button onclick=\"location.href='/test'\">Zurück zum Test-Menü</button>"
+    return "Error: Missing sensor or state"
+
+@app.route('/test')
+def test_page():
+    return """
+    <html><body style="font-family: sans-serif; padding: 20px;">
+    <h1>Sensoren Manuell Triggern</h1>
+    <style>button { padding: 10px 20px; margin: 5px; font-size: 16px; cursor: pointer; }</style>
+    
+    <h3>Temperatur (ESP 2)</h3>
+    <button onclick="location.href='/test-trigger?sensor=temperatureAlarm&state=ON'">🌡️ Temp Heiß (ON) - Alarm auslösen</button>
+    <button onclick="location.href='/test-trigger?sensor=temperatureAlarm&state=OFF'">❄️ Temp Kühl (OFF) - Task lösen</button>
+
+    <h3>Laser (ESP 1)</h3>
+    <button onclick="location.href='/test-trigger?sensor=ldrSolved&state=ON'">🔦 Laser Gelöst (ON)</button>
+    
+    <h3>Frequenz (ESP 1)</h3>
+    <button onclick="location.href='/test-trigger?sensor=puzzleSolved&state=ON'">📻 Frequenz Gelöst (ON)</button>
+    
+    <h3>Keypad (ESP 2)</h3>
+    <button onclick="location.href='/test-trigger?sensor=keypadSolved&state=ON'">🔢 Keypad Gelöst (ON) - Finale starten</button>
+    
+    <h3>Autopilot</h3>
+    <button onclick="location.href='/test-trigger?sensor=autopilot&state=ON'">✈️ Autopilot ON</button>
+    <button onclick="location.href='/test-trigger?sensor=autopilot&state=OFF'">✈️ Autopilot OFF</button>
+    
+    <br><br><hr><br>
+    <a href="/">Zurück zum Hauptspiel (Cockpit)</a>
+    </body></html>
+    """
+
 
 @app.route("/gyro")
 def gyro():
@@ -327,12 +374,13 @@ def handle_request_start():
     # MÜSSEN wir den Browser zwingen, jetzt die Seite zu wechseln!
     if seq_id == "landing_task" or keypad:
         socketio.emit('start_landing_sequence')
-        def delayed_landing_sub():
-            time.sleep(2)
-            emit_subtitle("landing_task")
-        socketio.start_background_task(delayed_landing_sub)
     else:
         emit_subtitle(seq_id)
+
+@socketio.on('landing_ready')
+def handle_landing_ready():
+    print("Landing Page ist bereit - spiele Landing Audio ab.")
+    emit_subtitle("landing_task")
 
 @socketio.on('repeat_transmission')
 def handle_repeat_transmission():
@@ -406,19 +454,10 @@ def handle_sensor_data(data):
     if game_finished or keypad:
         last_send_time = current_time
         return
+    
+    # Die Logik zum Starten von Challenges wurde in den background_monitor verschoben,
+    # damit sie auch triggert, wenn das Handy gerade keine Daten sendet (Idle/Standby).
 
-    # Subtitles müssen beendet sein (z.B. Intro fertig gesprochen)
-    subtitle_safe = current_time > last_subtitle_end_time
-
-    # 1. Erste Challenge starten (sobald Temperatur OK ist und das Intro vorbei ist)
-    if temparatur and not neigung_challenge_active and last_neigung_challenge_time == 0:
-        if subtitle_safe:
-            start_neigung_challenge()
-
-    # 2. Weitere Challenges starten (wenn Cooldown abgelaufen)
-    if temparatur and not neigung_challenge_active and last_neigung_challenge_time > 0:
-        if current_time - last_neigung_challenge_time >= NEIGUNG_INTERVAL and (current_time - last_subtitle_end_time > SUBTITLE_COOLDOWN):
-            start_neigung_challenge()
 
     # Aktive Challenge prüfen
     if neigung_challenge_active and neigung_challenge_data:
@@ -458,22 +497,34 @@ def handle_sensor_data(data):
 
     last_send_time = current_time
 
-def inactivity_monitor():
-    """Hintergrund-Task: Erkennt, ob das Handy aus ist / Verbindung verloren hat."""
-    global last_sensor_receive_time
+def background_monitor():
+    """Hintergrund-Task: Prüft Inaktivität UND triggert neue Neigung-Challenges."""
+    global last_sensor_receive_time, neigung_challenge_active
     while True:
-        socketio.sleep(0.5)
-        # Wenn über 1 Sekunde keine Daten vom Handy kamen
-        if time.time() - last_sensor_receive_time > 5.0:
-            payload = json.dumps({"brightness_10": 90, "brightness_11": 90})
-            try:
-                client.publish(MQTT_TOPIC, payload)
-                # Auch das Cockpit UI zentrieren!
-                socketio.emit('cockpit_gyro', {'pitch': 0, 'roll': 0})
-            except Exception:
-                pass
+        socketio.sleep(1.0)
+        current_time = time.time()
 
-socketio.start_background_task(inactivity_monitor)
+        # 1. Handy-Inaktivität prüfen (Zentrieren wenn weg)
+        if current_time - last_sensor_receive_time > 5.0:
+            try:
+                client.publish(MQTT_TOPIC, json.dumps({"brightness_10": 90, "brightness_11": 90}))
+                socketio.emit('cockpit_gyro', {'pitch': 0, 'roll': 0})
+            except Exception: pass
+
+        # 2. Neigung-Challenges triggern (unabhängig davon ob das Handy gerade sendet)
+        if temparatur and not neigung_challenge_active and not keypad and not game_finished:
+            subtitle_safe = current_time > last_subtitle_end_time + SUBTITLE_COOLDOWN
+            
+            # Erste Challenge
+            if last_neigung_challenge_time == 0:
+                if subtitle_safe:
+                    start_neigung_challenge()
+            # Folge-Challenges
+            elif current_time - last_neigung_challenge_time >= NEIGUNG_INTERVAL:
+                if subtitle_safe:
+                    start_neigung_challenge()
+
+socketio.start_background_task(background_monitor)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

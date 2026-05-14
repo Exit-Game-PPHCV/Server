@@ -5,6 +5,14 @@
 {% endblock %}
 
 {% block content %}
+<div id="landing-start-screen" class="start-screen" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;justify-content:center;align-items:center;transition:opacity 0.5s;">
+    <div class="start-content" style="text-align:center;color:#00ffcc;">
+        <h1 style="font-size:3rem;margin-bottom:10px;text-shadow:0 0 20px #00ffcc;">APPROACHING SINGAPORE</h1>
+        <p style="font-size:1.2rem;margin-bottom:30px;color:#fff;">FLIGHT CONTROLS TRANSFERRED</p>
+        <button id="landing-start-btn" style="padding:15px 40px;font-size:1.5rem;background:transparent;border:2px solid #00ffcc;color:#00ffcc;cursor:pointer;border-radius:5px;box-shadow:0 0 15px rgba(0,255,204,0.3);transition:all 0.3s;">BEGIN DESCENT</button>
+    </div>
+</div>
+
 <div class="landing-container">
     <div class="hud">
         <div class="hud-item">TARGET ALT: <span id="target-alt">8000</span>m</div>

@@ -32,10 +32,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPitch = 0; // Negative = nose down, Positive = nose up
     let displayedPitch = 0; // For smooth visual rotation
     
-    let isGameRunning = true;
+    let isGameRunning = false;
     let startTime = performance.now();
     let lastTime = performance.now();
     let warningActive = false;
+
+    const startScreen = document.getElementById('landing-start-screen');
+    const startBtn = document.getElementById('landing-start-btn');
+
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            if (startScreen) {
+                startScreen.style.opacity = '0';
+                setTimeout(() => {
+                    startScreen.style.display = 'none';
+                }, 500);
+            }
+            
+            // Audio erlauben und Server mitteilen, dass wir bereit sind
+            socket.emit('landing_ready');
+            
+            // Spiel starten
+            startTime = performance.now();
+            lastTime = performance.now();
+            isGameRunning = true;
+            requestAnimationFrame(gameLoop);
+        });
+    }
 
     // Listen for gyro data
     socket.on('cockpit_gyro', (data) => {
@@ -85,8 +108,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helper: Calculate ideal altitude at a given time (in seconds)
     function getIdealAltitude(t) {
         if (t >= GAME_DURATION_SEC) return 0;
-        // Quadratic curve: steep at start, flat at end
-        const progress = t / GAME_DURATION_SEC; // 0 to 1
+        
+        // GRACE PERIOD: Bleibe für die ersten 25 Sekunden (während der Funkspruch läuft) auf 8000m
+        if (t <= 25) return START_ALT;
+        
+        const activeDuration = GAME_DURATION_SEC - 25;
+        const activeT = t - 25;
+        const progress = activeT / activeDuration; // 0 to 1
         const remaining = 1 - progress;
         return START_ALT * (remaining * remaining);
     }
@@ -213,11 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Math.abs(altDifference) > currentTolerance) {
             if (!warningActive) {
                 // Penalty: Push the plane further away instead of resetting it to target!
-                // If they are too high, push them even higher. If too low, push them even lower.
+                // Reduziert auf 250m. 800m war größer als die Toleranz, was zu einem 
+                // unausweichlichen "Death Spiral" geführt hat (permanente Strafen).
                 if (altDifference > 0) {
-                    planeAltitude += 800;
+                    planeAltitude += 250;
                 } else {
-                    planeAltitude -= 800;
+                    planeAltitude -= 250;
                 }
                 showWarning();
             }
@@ -268,5 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('landing_complete');
     }
 
-    requestAnimationFrame(gameLoop);
+    // requestAnimationFrame wird nun erst beim Klick auf den Start-Button aufgerufen
+    // requestAnimationFrame(gameLoop);
 });
