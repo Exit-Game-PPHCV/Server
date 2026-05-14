@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('cockpit_gyro', (data) => {
         currentPitch = data.pitch || 0;
         currentRoll = data.roll || 0;
-        updateAI(currentPitch, currentRoll);
+        // Vertauscht weitergegeben, damit die Cockpit-Anzeige stimmt
+        updateAI(currentRoll, currentPitch);
     });
 
     // Listen for MQTT Data
@@ -202,6 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
             neigungAudio.pause();
             neigungAudio.currentTime = 0;
         }
+        isGyroSolved = true;
+        updateUIState();
     });
 
     function updateUIState() {

@@ -40,7 +40,7 @@ function startSensor() {
     } catch (e) {
         console.warn("Fullscreen/Orientation API nicht verfügbar", e);
     }
-    
+
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
             .then(permissionState => {
