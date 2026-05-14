@@ -128,6 +128,7 @@ SUBTITLE_COOLDOWN = 5           # Sekunden Cooldown nach Subtitle bevor neue Cha
 
 # --- Inaktivitäts-Erkennung ---
 last_sensor_receive_time = time.time()
+monitor_started = False
 
 
 
@@ -355,7 +356,14 @@ def landing_game():
 
 @socketio.on('connect')
 def handle_connect():
-    global cable, cable_count
+    global cable, cable_count, monitor_started
+    
+    # Hintergrund-Monitor beim ersten Connect starten (wichtig für Raspberry Pi Stabilität)
+    if not monitor_started:
+        print("[SYSTEM] Starte Hintergrund-Monitor...")
+        socketio.start_background_task(background_monitor)
+        monitor_started = True
+
     # Reset progress only if the task was not yet fully completed
     if not cable:
         cable_count = 0
@@ -509,7 +517,7 @@ def background_monitor():
     global last_sensor_receive_time, neigung_challenge_active
     global temparatur, keypad, game_finished, last_subtitle_end_time, last_neigung_challenge_time
 
-    print("Background Monitor gestartet!")
+    print("[MONITOR] Aktiviert und läuft.")
     
     while True:
         socketio.sleep(1.0)
@@ -522,22 +530,32 @@ def background_monitor():
                 socketio.emit('cockpit_gyro', {'pitch': 0, 'roll': 0})
             except Exception: pass
 
-        # 2. Neigung-Challenges triggern (unabhängig davon ob das Handy gerade sendet)
+        # 2. Neigung-Challenges triggern
         if temparatur and not neigung_challenge_active and not keypad and not game_finished:
+            # Debug-Ausgabe alle 5 Sekunden wenn wir im Warte-Modus sind
+            if int(current_time) % 5 == 0:
+                print(f"[MONITOR] Prüfe Bedingungen: Subtitle-Safe? {current_time > last_subtitle_end_time + SUBTITLE_COOLDOWN}")
+
             subtitle_safe = current_time > last_subtitle_end_time + SUBTITLE_COOLDOWN
             
             # Erste Challenge
             if last_neigung_challenge_time == 0:
                 if subtitle_safe:
-                    print("Background Monitor: Starte ERSTE Neigungs-Challenge!")
+                    print("[MONITOR] TRIGGER: Starte ERSTE Neigungs-Challenge!")
                     start_neigung_challenge()
+                else:
+                    # Optional: Loggen warum wir warten
+                    if int(current_time) % 5 == 0:
+                        wait_time = int((last_subtitle_end_time + SUBTITLE_COOLDOWN) - current_time)
+                        print(f"[MONITOR] Warte auf Audio-Ende... ({wait_time}s verbleibend)")
             # Folge-Challenges
             elif current_time - last_neigung_challenge_time >= NEIGUNG_INTERVAL:
                 if subtitle_safe:
-                    print("Background Monitor: Starte FOLGE Neigungs-Challenge!")
+                    print("[MONITOR] TRIGGER: Starte FOLGE Neigungs-Challenge!")
                     start_neigung_challenge()
 
-socketio.start_background_task(background_monitor)
+# Task-Start erfolgt jetzt im handle_connect
+# socketio.start_background_task(background_monitor)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
