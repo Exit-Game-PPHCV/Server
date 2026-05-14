@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             warningMsg.classList.remove('active');
             warningActive = false;
-        }, 1000);
+        }, 3000);
     }
 
     // Subtitle sequence handling
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawPlane(x, y, pitch) {
         ctx.save();
         ctx.translate(x, y);
-        ctx.rotate(-pitch * Math.PI / 180);
+        ctx.rotate(pitch * Math.PI / 180);
 
         // Plane Body (Fuselage)
         ctx.fillStyle = '#cccccc';
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Update Plane Physics
         // Negative pitch = nose down = positive descent rate
-        const playerDescentRate = (-currentPitch * PITCH_FACTOR);
+        const playerDescentRate = (currentPitch * PITCH_FACTOR);
         planeAltitude -= playerDescentRate * dt;
 
         // 3. Collision / Boundaries
