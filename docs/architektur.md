@@ -298,9 +298,37 @@ Exit Game/
 
 ---
 
-## 8. Design-Entscheidungen und ihre Begründung
+## 8. Hardware & Firmware-Integration (ESP32)
 
-### 8.1 Warum ein Raspberry Pi als Gateway?
+Das System nutzt drei ESP32-Mikrocontroller, um physische Eingaben (Sensoren) und Ausgaben (Aktoren) zu verarbeiten. Um diese nahtlos in das Zigbee-Netzwerk zu integrieren, ohne aufwendige eigene Zigbee-Cluster programmieren zu müssen, nutzt die Firmware einen architektonischen Kniff (den **"Zigbee-Hack"**): Die ESPs simulieren Standard-Smart-Home-Geräte.
+
+### 8.1 Der "Zigbee-Hack": Missbrauch von Standard-Profilen
+- **Booleans als Steckdosen (`ZigbeePowerOutlet`)**: Zustände wie "Rätsel gelöst" oder "Temperaturalarm aktiv" (True/False) werden als smarte Steckdosen registriert. Ein `true` schaltet die virtuelle Steckdose "AN", was Zigbee2MQTT als `{"state": "ON"}` an den MQTT-Broker sendet.
+- **Servowinkel als Lampenhelligkeit (`ZigbeeDimmableLight`)**: Um numerische Werte an die Servos zu senden, simulieren diese dimmbare Lampen. Der Helligkeitswert (0-254) wird von der Flask-App gesendet und vom ESP als Servowinkel interpretiert.
+
+### 8.2 Firmware-Übersicht
+
+| Mikrocontroller | Firmware-Ordner | Sensoren/Aktoren | Zigbee-Endpunkte |
+|---|---|---|---|
+| **ESP32 #1** | `Potentiometer-LDR_ESP-main` | 3x Potentiometer (Frequenz)<br>1x LDR (Laser)<br>Status-LEDs | EP 1: PowerOutlet (Frequenz gelöst)<br>EP 2: PowerOutlet (Laser gelöst) |
+| **ESP32 #2** | `Keypad-TemperaturAlarm_ESP-main` | 4x4 Keypad<br>DHT22 Temperatur<br>Buzzer & LEDs | EP 1: PowerOutlet (Code korrekt)<br>EP 2: PowerOutlet (Temp-Alarm aktiv) |
+| **ESP32 #3** | `Flugzeug-ESP-main` | 2x Servo-Motoren (Pitch & Roll) | EP 10: DimmableLight (Pitch)<br>EP 11: DimmableLight (Roll) |
+
+### 8.3 Detail-Analyse: Die Bewegung des Modellflugzeugs
+Ein zentrales Element der Immersion ist die physische Bewegung des Modellflugzeugs, die exakt den Neigungsbewegungen des Smartphones folgt. Dieser Prozess durchläuft alle Schichten der Architektur:
+
+1. **Datenerfassung am Smartphone**: Der Browser des Smartphones nutzt die HTML5 `DeviceOrientationEvent`-API, um die physische Neigung des Geräts auszulesen. Da moderne Browser diese API aus Sicherheitsgründen nur über verschlüsselte Verbindungen erlauben, ist der Traefik-Reverse-Proxy mit TLS (HTTPS) hier zwingend erforderlich.
+2. **Übertragung zum Server**: Die rohen Winkeldaten (Pitch und Roll) werden über eine persistente WebSocket-Verbindung (Socket.IO) an die Flask-App gesendet (`sensor_data`-Event). WebSockets verhindern den Overhead von HTTP-Polling und ermöglichen eine latenzfreie Übertragung.
+3. **Verarbeitung in Flask**: Der Server nimmt die Winkel (z. B. -35° bis +35°) entgegen und zentriert sie (Addition von 90°), sodass 0° Neigung einem Servowinkel von 90° entspricht. Die Werte werden für das Zigbee-Netzwerk als Helligkeitswerte formatiert.
+4. **MQTT zu Zigbee2MQTT**: Flask veröffentlicht einen MQTT-Payload (z. B. `{"brightness_10": 75, "brightness_11": 98}`) auf dem Topic `zigbee2mqtt/servo/set`.
+5. **Zigbee-Übertragung**: Zigbee2MQTT empfängt die MQTT-Nachricht, übersetzt sie in das binäre Zigbee-Protokoll und sendet sie über den CC2652P USB-Dongle drahtlos an den ESP32 #3.
+6. **Ausführung am ESP32**: Die Firmware (`Flugzeug.ino`) lauscht auf den Callbacks der virtuellen `ZigbeeDimmableLight`-Endpunkte. Sobald ein neuer "Helligkeitswert" eintrifft, wird dieser direkt an die `ESP32Servo`-Bibliothek übergeben, welche die PWM-Signale an GPIO 4 und 5 moduliert, um die physischen Servomotoren in die exakte Position zu steuern.
+
+---
+
+## 9. Design-Entscheidungen und ihre Begründung
+
+### 9.1 Warum ein Raspberry Pi als Gateway?
 
 Der Pi vereint **Rechenleistung** (für Flask + Docker), **USB-Ports** (für den Zigbee-Dongle) und **WiFi** (für die Netzwerkverbindung) in einem kompakten, kostengünstigen Gerät. Er fungiert als **Single Point of Truth** für den Spielzustand – alle Sensordaten laufen hier zusammen, alle Spielentscheidungen werden hier getroffen, alle Clients werden von hier aus gesteuert.
 
@@ -309,7 +337,7 @@ Der Pi vereint **Rechenleistung** (für Flask + Docker), **USB-Ports** (für den
 - **Kosten**: Ein Raspberry Pi 4 kostet einen Bruchteil eines vollwertigen Servers und reicht für die Anforderungen dieses Projekts vollkommen aus.
 - **Linux-basiert**: Docker, Git und alle benötigten Tools laufen nativ, ohne Kompromisse.
 
-### 8.2 Warum Flask als Web-Framework?
+### 9.2 Warum Flask als Web-Framework?
 
 Flask wurde bewusst als **Micro-Framework** gewählt, weil es genau die richtige Abstraktionsebene für dieses Projekt bietet:
 
@@ -320,7 +348,7 @@ Flask wurde bewusst als **Micro-Framework** gewählt, weil es genau die richtige
 
 **Alternative wäre gewesen**: Node.js mit Express + Socket.IO. Dies hätte ähnliche Vorteile geboten, aber Python war die vertrautere Sprache im Team.
 
-### 8.3 Warum Docker und warum genau diese Container?
+### 9.3 Warum Docker und warum genau diese Container?
 
 Docker wurde eingesetzt, um das System **reproduzierbar und portabel** zu machen. Statt auf dem Raspberry Pi manuell Mosquitto, Zigbee2MQTT und Python-Abhängigkeiten zu installieren, definiert eine einzige `compose.yml` das gesamte System. Ein `docker compose up` startet alles.
 
@@ -336,7 +364,7 @@ Die fünf Container und ihre Begründung:
 
 **Vorteil der Containerisierung**: Wenn ein einzelner Dienst abstürzt (z.B. Zigbee2MQTT), starten die anderen Container unabhängig weiter. Die `restart: unless-stopped`-Policy sorgt für automatische Wiederherstellung.
 
-### 8.4 Warum ein Smartphone statt eines dedizierten Gyroskop-Sensors?
+### 9.4 Warum ein Smartphone statt eines dedizierten Gyroskop-Sensors?
 
 Diese Entscheidung war eine der wirkungsvollsten des Projekts:
 
@@ -347,7 +375,7 @@ Diese Entscheidung war eine der wirkungsvollsten des Projekts:
 
 **Technischer Trick**: Da Browser die `DeviceOrientationEvent`-API nur über HTTPS freigeben, war der Traefik-Reverse-Proxy mit TLS eine zwingende Voraussetzung für diese Lösung.
 
-### 8.5 Warum Zigbee statt WiFi für die ESP32-Sensoren?
+### 9.5 Warum Zigbee statt WiFi für die ESP32-Sensoren?
 
 - **Eigenes Netzwerk**: Die ESPs kommunizieren über ein separates Zigbee-Mesh und belasten nicht das WLAN, über das Laptop und Smartphone ihre WebSocket-Verbindungen halten.
 - **Stromsparend**: Zigbee-Geräte können monatelang mit einer Batterie laufen. WiFi-basierte ESPs benötigen dagegen eine dauerhafte Stromversorgung.
@@ -355,7 +383,7 @@ Diese Entscheidung war eine der wirkungsvollsten des Projekts:
 - **Keine IP-Konfiguration**: Zigbee-Geräte werden über Zigbee2MQTT gepairt, nicht über DHCP. Das eliminiert eine ganze Klasse von Netzwerkproblemen.
 - **Entkopplung**: Durch die MQTT-Abstraktionsschicht kann die Flask-App einfach `zigbee2mqtt/+` abonnieren, ohne zu wissen, wie viele Sensoren existieren oder wie das Zigbee-Protokoll intern funktioniert.
 
-### 8.6 Warum Zigbee2MQTT als Übersetzungsschicht?
+### 9.6 Warum Zigbee2MQTT als Übersetzungsschicht?
 
 Zigbee2MQTT wurde bewusst als **Abstraktionslayer** zwischen der physischen Zigbee-Welt und der Anwendungslogik eingesetzt:
 
@@ -363,7 +391,7 @@ Zigbee2MQTT wurde bewusst als **Abstraktionslayer** zwischen der physischen Zigb
 - **Web-UI**: Zigbee2MQTT bietet unter `z2m.exit.game` eine grafische Oberfläche für Geräte-Management, Pairing und Debugging. Das hat die Entwicklung enorm beschleunigt.
 - **Community-Support**: Mit über 3000 unterstützten Geräten und aktiver Entwicklung ist Zigbee2MQTT ein bewährtes Open-Source-Projekt, das regelmäßig Updates erhält.
 
-### 8.7 Warum Socket.IO statt reinem HTTP-Polling?
+### 9.7 Warum Socket.IO statt reinem HTTP-Polling?
 
 Socket.IO baut eine **persistente, bidirektionale WebSocket-Verbindung** auf. Dies ist essenziell für:
 
@@ -372,7 +400,7 @@ Socket.IO baut eine **persistente, bidirektionale WebSocket-Verbindung** auf. Di
 - **Server-initiierte Events**: Der Server kann jederzeit Subtitles, Challenges oder Spielzustandsänderungen an alle Clients pushen, ohne dass der Client danach fragen muss.
 - **Automatische Reconnection**: Socket.IO verwaltet Verbindungsabbrüche und baut die Verbindung automatisch wieder auf – wichtig in einem WLAN-Umfeld mit möglichen kurzen Aussetzern.
 
-### 8.8 Warum serverseitiger Spielzustand?
+### 9.8 Warum serverseitiger Spielzustand?
 
 Der gesamte Spielzustand (welche Tasks erledigt sind, welche Challenge aktiv ist) wird zentral in der Flask-App verwaltet, nicht im Browser:
 
@@ -380,7 +408,7 @@ Der gesamte Spielzustand (welche Tasks erledigt sind, welche Challenge aktiv ist
 - **Multi-Client-Synchronisation**: Laptop und Smartphone müssen denselben Spielzustand sehen. Serverseitige Verwaltung stellt sicher, dass es keine Inkonsistenzen gibt.
 - **Hardware-Integration**: Nur der Server hat Zugriff auf den MQTT-Broker und kann Sensor-Events empfangen und Servo-Befehle senden. Der Browser hat keinen direkten Draht zur Hardware.
 
-### 8.9 Warum Eventlet für Concurrency?
+### 9.9 Warum Eventlet für Concurrency?
 
 Die Flask-App muss **gleichzeitig** drei Dinge tun:
 1. HTTP-Anfragen beantworten (Seitenaufruf)
@@ -389,7 +417,7 @@ Die Flask-App muss **gleichzeitig** drei Dinge tun:
 
 Eventlet löst dieses Problem durch **kooperatives Multitasking** (Green Threads). Es „patcht" die Python-Standardbibliothek (`monkey_patch()`), sodass blockierende I/O-Operationen automatisch zu nicht-blockierenden werden. Dadurch können alle drei Aufgaben in einem einzigen Prozess laufen, ohne sich gegenseitig zu blockieren.
 
-### 8.10 Warum ein eigener DNS-Server (dnsmasq)?
+### 9.10 Warum ein eigener DNS-Server (dnsmasq)?
 
 Statt den Spielern die IP-Adresse des Raspberry Pi mitzuteilen (z.B. `https://192.168.1.2:5000`), wird ein eigener DNS-Server betrieben, der alle Anfragen an `*.exit.game` auf die IP des Pi auflöst:
 
