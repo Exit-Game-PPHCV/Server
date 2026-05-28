@@ -300,11 +300,11 @@ Exit Game/
 
 ## 8. Hardware & Firmware-Integration (ESP32)
 
-Das System nutzt drei ESP32-Mikrocontroller, um physische Eingaben (Sensoren) und Ausgaben (Aktoren) zu verarbeiten. Um diese nahtlos in das Zigbee-Netzwerk zu integrieren, ohne aufwendige eigene Zigbee-Cluster programmieren zu müssen, nutzt die Firmware einen architektonischen Kniff (den **"Zigbee-Hack"**): Die ESPs simulieren Standard-Smart-Home-Geräte.
+Das System nutzt drei ESP32-Mikrocontroller, um die physischen Sensoren und Aktoren im Raum zu steuern. Anstatt aufwendig eigene Zigbee-Cluster von Grund auf neu zu programmieren, haben wir uns für einen sehr pragmatischen Lösungsansatz entschieden: Die ESP32-Boards geben sich im Netzwerk einfach als herkömmliche Smart-Home-Geräte aus.
 
-### 8.1 Der "Zigbee-Hack": Missbrauch von Standard-Profilen
-- **Booleans als Steckdosen (`ZigbeePowerOutlet`)**: Zustände wie "Rätsel gelöst" oder "Temperaturalarm aktiv" (True/False) werden als smarte Steckdosen registriert. Ein `true` schaltet die virtuelle Steckdose "AN", was Zigbee2MQTT als `{"state": "ON"}` an den MQTT-Broker sendet.
-- **Servowinkel als Lampenhelligkeit (`ZigbeeDimmableLight`)**: Um numerische Werte an die Servos zu senden, simulieren diese dimmbare Lampen. Der Helligkeitswert (0-254) wird von der Flask-App gesendet und vom ESP als Servowinkel interpretiert.
+### 8.1 Zweckentfremdung von Standard-Profilen
+- **Statuswerte als smarte Steckdosen (`ZigbeePowerOutlet`)**: Einfache Ja/Nein-Zustände (wie "Rätsel gelöst" oder "Temperaturalarm aktiv") werden als smarte Steckdosen abgebildet. Wenn ein Rätsel gelöst ist, "schaltet" der ESP die virtuelle Steckdose ein. Zigbee2MQTT übersetzt das dann praktischerweise direkt in ein `{"state": "ON"}` für unseren MQTT-Broker.
+- **Servowinkel als Lampenhelligkeit (`ZigbeeDimmableLight`)**: Um stufenlose numerische Werte an die Servos für das Flugzeug zu übermitteln, tun die ESPs so, als wären sie dimmbare Glühbirnen. Die Flask-App sendet einfach einen "Helligkeitswert" zwischen 0 und 254, den der Mikrocontroller dann direkt in den entsprechenden Winkel für den Servomotor umrechnet.
 
 ### 8.2 Firmware-Übersicht
 
